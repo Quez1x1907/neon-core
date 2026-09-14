@@ -319,16 +319,52 @@ h1,h2,h3{font-weight:600}
 @media (orientation:landscape) and (min-width:900px){
   #inspector{left:auto;right:10px;top:64px;bottom:auto}
 }
+/* ---------- телефон в портрете ---------- */
 @media (max-width:560px){
-  .tcard{width:64px}
-  .tcard img{width:34px;height:34px}
-  #hud .chip{font-size:11.5px;padding:5px 9px}
-  #nextwave{left:10px;justify-content:space-between}
-  #wave-preview{max-width:none}
-  /* в портрете инспектор уезжает наверх, чтобы не конфликтовать с кнопкой волны */
-  #inspector{left:6px;right:6px;width:auto;top:8px;bottom:auto;max-height:46%;overflow-y:auto}
+  /* HUD: крупные тач-цели, перенос на вторую строку при нехватке места */
+  #hud{gap:6px;padding:6px 8px}
+  #hud .chip{font-size:12px;padding:6px 10px}
+  .hbtn{width:40px;height:38px}
+  .hbtn b{font-size:15px}
+
+  /* кнопка волны — полноширинная панель, превью под ней скроллится */
+  #nextwave{left:6px;right:6px;bottom:6px;flex-wrap:wrap;gap:6px;padding:8px;border-radius:12px}
+  #btn-wave{flex:1 1 100%;font-size:14px;padding:12px 16px}
+  #wave-preview{flex:1 1 100%;display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;max-width:none;padding:2px;scrollbar-width:none}
+  #wave-preview::-webkit-scrollbar{display:none}
+  .pv{flex:none}
+
+  /* инспектор — шторка снизу над панелью строительства */
+  #inspector{left:6px;right:6px;width:auto;top:auto;bottom:6px;max-height:44%;overflow-y:auto;border-radius:12px}
+
+  /* подсказка — под HUD */
+  .hint{top:calc(6px + env(safe-area-inset-top));bottom:auto;left:8px;right:8px;transform:none;max-width:none}
+
+  /* панель строительства: крупные карточки */
+  .tcard{width:72px;padding:8px 4px 7px}
+  .tcard img{width:40px;height:40px}
+  .tcard .tc-cost{font-size:13px}
+  #buildbar{gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+
   .map-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
   .banner-text{font-size:22px}
+  .modal{width:min(430px,94vw)}
+}
+/* ---------- телефон боком: ужимаем панели, чтобы всё влезло по высоте ---------- */
+@media (max-height:460px) and (orientation:landscape){
+  #hud{padding:4px 8px;gap:6px}
+  #hud .chip{padding:3px 8px;font-size:11.5px}
+  .hbtn{width:34px;height:30px}
+  .hbtn b{font-size:12px}
+  .tcard{width:58px;padding:4px 3px}
+  .tcard img{width:28px;height:28px}
+  .tcard .tc-cost{font-size:11px}
+  #buildbar{padding:4px 8px calc(4px + env(safe-area-inset-bottom))}
+  #nextwave{padding:5px 8px;bottom:4px;right:4px}
+  #btn-wave{padding:7px 12px;font-size:12px}
+  #wave-preview{display:none}
+  #inspector{width:260px;max-height:70%}
+  .hint{bottom:8px}
 }
 </style>
 </head>
@@ -829,8 +865,11 @@ const ICONS = {
   cash:'<svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
   income:'<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 6-8 3 3"/><path d="M17 6h4v4"/></svg>',
 };
-/* ==================== Сохранения (localStorage + мягкая деградация) ==================== */
-const SAVE_KEY = 'neoncore_v1';
+/* ==================== Сохранения (localStorage + мягкая деградация) ====================
+   Ключ сейва привязан к пользователю Telegram (SAVE_KEY = neoncore_v1_u<id>),
+   чтобы на общем устройстве прогресс игроков не смешивался.
+   Вне Telegram — общий ключ neoncore_v1. */
+let SAVE_KEY = 'neoncore_v1';
 function defSave(){
   return {
     v:1, lang:null, sound:true, lowgfx:false, auto:false, cores:0, savedAt:0,
@@ -843,22 +882,24 @@ function defSave(){
   };
 }
 const storageOK = (()=>{ try{ localStorage.setItem('__nc_t','1'); localStorage.removeItem('__nc_t'); return true; }catch(e){ return false; } })();
-let S = (()=>{
+function mergeSave(d, loaded){
+  Object.assign(d, loaded);
+  d.meta = Object.assign(defSave().meta, loaded.meta||{});
+  d.stats = Object.assign(defSave().stats, loaded.stats||{});
+  d.maps = loaded.maps||{}; d.ach = loaded.ach||{}; d.seen = loaded.seen||{}; d.tut = loaded.tut||{};
+  return d;
+}
+function loadSaveFrom(key){
   const d = defSave();
   if (storageOK){
     try{
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (raw){
-        const loaded = JSON.parse(raw);
-        Object.assign(d, loaded);
-        d.meta = Object.assign(defSave().meta, loaded.meta||{});
-        d.stats = Object.assign(defSave().stats, loaded.stats||{});
-        d.maps = loaded.maps||{}; d.ach = loaded.ach||{}; d.seen = loaded.seen||{}; d.tut = loaded.tut||{};
-      }
+      const raw = localStorage.getItem(key);
+      if (raw) mergeSave(d, JSON.parse(raw));
     }catch(e){ /* повреждённый сейв — начинаем с чистого */ }
   }
   return d;
-})();
+}
+let S = loadSaveFrom(SAVE_KEY);
 function persist(){
   S.savedAt = Date.now();
   if (storageOK){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
@@ -976,6 +1017,18 @@ function initTelegram(){
     TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
   }catch(e){ TG = null; }
   if (!TG) return;
+  // сейв по пользователю: ключ привязан к ID игрока Telegram
+  try{
+    const u = TG.initDataUnsafe && TG.initDataUnsafe.user;
+    if (u && u.id){
+      SAVE_KEY = 'neoncore_v1_u' + u.id;
+      // одноразовая миграция общего сейва в пользовательский ключ
+      if (storageOK && !localStorage.getItem(SAVE_KEY)){
+        const legacy = localStorage.getItem('neoncore_v1');
+        if (legacy){ localStorage.setItem(SAVE_KEY, legacy); localStorage.removeItem('neoncore_v1'); }
+      }
+    }
+  }catch(e){}
   try{ if (typeof TG.ready === 'function') TG.ready(); }catch(e){}
   try{ if (typeof TG.expand === 'function') TG.expand(); }catch(e){}
   try{ if (typeof TG.disableVerticalSwipes === 'function') TG.disableVerticalSwipes(); }catch(e){}
@@ -989,6 +1042,14 @@ function initTelegram(){
           AudioSys.play('click');
           UI.showScreen('menu');
         }
+      });
+    }
+  }catch(e){}
+  // сворачивание мини-аппа — ставим бой на паузу
+  try{
+    if (typeof TG.onEvent === 'function'){
+      TG.onEvent('deactivated', ()=>{
+        try{ if (G.state === 'play' && UI.cur === 'game') UI.openPause(); }catch(e){}
       });
     }
   }catch(e){}
@@ -3533,6 +3594,7 @@ let rafQueued = false;
 let lastRafAt = 0;     // когда rAF в последний раз дал кадр
 let workerOn = false;  // воркер взял цикл на себя
 const bootAt = performance.now();
+let fpsT0 = performance.now(), fpsN = 0, autoLowDone = false;
 
 function tick(now){
   window.__nc_frames = (window.__nc_frames||0) + 1;
@@ -3555,6 +3617,19 @@ function tick(now){
       renderGame();
       UI.updateHUD(false);
       if (G.waveState === 'running') UI.refreshWaveUI();
+    }
+  }
+
+  // авто-низкая графика: если кадры просели ниже 25 — смягчаем картинку сами
+  fpsN++;
+  const nowF = performance.now();
+  if (nowF - fpsT0 >= 4000){
+    const fps = fpsN*1000/(nowF - fpsT0);
+    fpsT0 = nowF; fpsN = 0;
+    if (!autoLowDone && !S.lowgfx && fps < 25 && nowF - bootAt > 8000){
+      autoLowDone = true;
+      S.lowgfx = true; persist(); computeView();
+      try{ UI.toast(t('s_autolow'), 'warn'); }catch(e){}
     }
   }
 }
@@ -3606,6 +3681,7 @@ setInterval(()=>{
 
 async function boot(){
   initTelegram();                 // SDK Telegram (в обычном браузере — no-op)
+  S = loadSaveFrom(SAVE_KEY);     // ключ мог смениться на пользовательский (по ID игрока)
   try{ await loadCloudSave(); }catch(e){}  // облачный сейв новее локального — берём его
   LANG = S.lang || ((navigator.language||'').toLowerCase().startsWith('ru') ? 'ru' : 'en');
   document.documentElement.lang = LANG;
