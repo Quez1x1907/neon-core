@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#05070f">
 <title>NEON CORE — tower defense</title>
+<!-- Официальный SDK Telegram Mini Apps: если страница открыта вне Telegram, объект просто не используется -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 /* ============ NEON CORE — стили ============ */
 :root{
@@ -417,6 +419,7 @@ ru: {
   tagline:'tower defense · защити ядро от вирусов',
   play:'Играть', lab:'Лаборатория', ach:'Достижения', settings:'Настройки',
   cores:'ядер данных',
+  hello_tpl:'Привет, {n}',
   select_map:'Выбор карты', stars_total:'звёзд', need_stars:'Нужно {n}★',
   endless_best:'∞ рекорд: волна {n}', endless_locked:'∞ — после победы',
   endless:'Бесконечный', diff:['Прогрев','Норма','Риск','Опасно','Жёстко','Критично','Легенда','Хаос'],
@@ -523,6 +526,7 @@ en: {
   tagline:'tower defense · protect the core from viruses',
   play:'Play', lab:'Lab', ach:'Achievements', settings:'Settings',
   cores:'data cores',
+  hello_tpl:'Hi, {n}',
   select_map:'Select map', stars_total:'stars', need_stars:'Requires {n}★',
   endless_best:'∞ record: wave {n}', endless_locked:'∞ — after victory',
   endless:'Endless', diff:['Warmup','Normal','Risky','Danger','Tough','Critical','Legend','Chaos'],
@@ -829,7 +833,7 @@ const ICONS = {
 const SAVE_KEY = 'neoncore_v1';
 function defSave(){
   return {
-    v:1, lang:null, sound:true, lowgfx:false, auto:false, cores:0,
+    v:1, lang:null, sound:true, lowgfx:false, auto:false, cores:0, savedAt:0,
     meta:{ dmg:0, lives:0, cash:0, income:0 },
     maps:{},            // idx → {stars, best, milestone}
     ach:{},             // id → 1
@@ -855,7 +859,12 @@ let S = (()=>{
   }
   return d;
 })();
-function persist(){ if(!storageOK) return; try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+function persist(){
+  S.savedAt = Date.now();
+  if (storageOK){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+  // зеркалим в облачное хранилище Telegram — прогресс синхронится между устройствами
+  try{ if (TG && TG.CloudStorage && typeof TG.CloudStorage.setItem === 'function') TG.CloudStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+}
 function resetSave(){ S = defSave(); persist(); }
 function mapSave(i){ return S.maps[i] || (S.maps[i] = { stars:0, best:0, milestone:0 }); }
 function addCores(n){ S.cores += n; persist(); }
@@ -954,6 +963,78 @@ const AudioSys = {
     }
   },
 };
+/* ==================== Telegram Mini App: интеграция ====================
+   Если страница открыта вне Telegram (обычный браузер, file://), всё ниже —
+   безопасные no-op: игра работает как раньше. Внутри Telegram:
+   фуллскрин, тёмная тема шапки, запрет свайпа-закрытия, кнопка «Назад»,
+   вибро-отклик и облачное сохранение прогресса между устройствами. */
+
+let TG = null;
+
+function initTelegram(){
+  try{
+    TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  }catch(e){ TG = null; }
+  if (!TG) return;
+  try{ if (typeof TG.ready === 'function') TG.ready(); }catch(e){}
+  try{ if (typeof TG.expand === 'function') TG.expand(); }catch(e){}
+  try{ if (typeof TG.disableVerticalSwipes === 'function') TG.disableVerticalSwipes(); }catch(e){}
+  try{ if (typeof TG.enableClosingConfirmation === 'function') TG.enableClosingConfirmation(); }catch(e){}
+  try{ if (typeof TG.setHeaderColor === 'function') TG.setHeaderColor('#05070f'); }catch(e){}
+  try{ if (typeof TG.setBackgroundColor === 'function') TG.setBackgroundColor('#05070f'); }catch(e){}
+  try{
+    if (TG.BackButton && typeof TG.BackButton.onClick === 'function'){
+      TG.BackButton.onClick(()=>{
+        if (UI.cur === 'maps' || UI.cur === 'lab' || UI.cur === 'ach'){
+          AudioSys.play('click');
+          UI.showScreen('menu');
+        }
+      });
+    }
+  }catch(e){}
+}
+
+/* Кнопка «Назад» Telegram: видна на экранах списков */
+function syncBackButton(){
+  if (!TG || !TG.BackButton) return;
+  const show = UI.cur === 'maps' || UI.cur === 'lab' || UI.cur === 'ach';
+  try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
+}
+
+/* Вибро-отклик: 'light' — удар, 'success'/'error'/'warning' — уведомления */
+function haptic(kind){
+  try{
+    const h = TG && TG.HapticFeedback;
+    if (!h) return;
+    if (kind === 'light' && typeof h.impactOccurred === 'function') h.impactOccurred('light');
+    else if (typeof h.notificationOccurred === 'function') h.notificationOccurred(kind);
+  }catch(e){}
+}
+
+/* Облачный сейв: если в Telegram он новее локального — берём его */
+function loadCloudSave(){
+  return new Promise((resolve)=>{
+    try{
+      if (!TG || !TG.CloudStorage || typeof TG.CloudStorage.getItem !== 'function') return resolve();
+      TG.CloudStorage.getItem(SAVE_KEY, (err, data)=>{
+        try{
+          if (!err && data){
+            const parsed = JSON.parse(data);
+            if (parsed && parsed.v === 1 && (parsed.savedAt||0) > (S.savedAt||0)){
+              const d = defSave();
+              Object.assign(d, parsed);
+              d.meta = Object.assign(defSave().meta, parsed.meta||{});
+              d.stats = Object.assign(defSave().stats, parsed.stats||{});
+              d.maps = parsed.maps||{}; d.ach = parsed.ach||{}; d.seen = parsed.seen||{}; d.tut = parsed.tut||{};
+              S = d;
+            }
+          }
+        }catch(e){}
+        resolve();
+      });
+    }catch(e){ resolve(); }
+  });
+}
 /* ==================== Рендер-помощники: глоу-спрайты, фигуры, иконки ====================
    shadowBlur в горячем цикле не используем — неон делаем предрендерами-спрайтами и composite 'lighter'. */
 
@@ -1660,6 +1741,7 @@ function placeTower(type, c, r){
   S.stats.towersBuilt++;
   S.stats.maxTowers = Math.max(S.stats.maxTowers, G.towers.length);
   AudioSys.play('place');
+  haptic('light');
   burst(V.ox+(c+0.5)*V.cs, V.oy+(r+0.5)*V.cs, def.color, 12, 130, 0.4);
   UI.hintDismiss('place');
   checkAch();
@@ -2047,6 +2129,7 @@ function victory(){
   const newTowers = TOWER_ORDER.filter(tp=>UNLOCK_STARS[tp] > beforeStars && UNLOCK_STARS[tp] <= totalStars() && UNLOCK_STARS[tp] > 0);
   persist(); checkAch();
   AudioSys.play('win');
+  haptic('success');
   UI.openVictory({ stars, earned, firstWin, newMaps, newTowers });
 }
 
@@ -2059,6 +2142,7 @@ function defeat(){
   }
   persist(); checkAch();
   AudioSys.play('lose');
+  haptic('error');
   UI.openDefeat();
 }
 
@@ -2592,6 +2676,7 @@ const UI = {
     this.closeModal(); // любая смена экрана закрывает висящие модалки
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $('screen-'+name).classList.add('active');
+    syncBackButton();
     if (name==='menu') this.renderMenu();
     if (name==='maps') this.renderMaps();
     if (name==='lab') this.renderLab();
@@ -2601,7 +2686,12 @@ const UI = {
 
   /* ---------- главное меню ---------- */
   renderMenu(){
-    $('menu-stats').innerHTML =
+    let hello = '';
+    try{
+      const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
+      if (u && u.first_name) hello = '<span>'+t('hello_tpl', { n:u.first_name })+'</span>';
+    }catch(e){}
+    $('menu-stats').innerHTML = (hello ? hello : '') +
       '<span>'+t('stats_kills')+': <b>'+fmtNum(S.stats.kills)+'</b></span>'+
       '<span>'+t('cores')+': <b>'+fmtNum(S.cores)+'</b></span>'+
       '<span>'+t('stats_best')+': <b>'+(endlessBest()||'—')+'</b></span>';
@@ -3152,6 +3242,7 @@ function checkAch(){
       addCores(a.reward);
       UI.toast(t('t_ach', { name:t(a.key), r:a.reward }), 'ach');
       AudioSys.play('ach');
+      haptic('success');
       persist();
     }
   }
@@ -3513,7 +3604,9 @@ setInterval(()=>{
   try{ tick(now); }catch(e){ reportErr(e); }
 }, 50);
 
-function boot(){
+async function boot(){
+  initTelegram();                 // SDK Telegram (в обычном браузере — no-op)
+  try{ await loadCloudSave(); }catch(e){}  // облачный сейв новее локального — берём его
   LANG = S.lang || ((navigator.language||'').toLowerCase().startsWith('ru') ? 'ru' : 'en');
   document.documentElement.lang = LANG;
   applyStaticI18n();
@@ -3521,6 +3614,7 @@ function boot(){
   initInput();
   initBgfx();
   UI.showScreen('menu');
+  syncBackButton();
   queueFrame();
 }
 
