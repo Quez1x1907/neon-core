@@ -980,8 +980,18 @@ const AudioSys = {
     src.connect(f); f.connect(g); g.connect(this.master);
     src.start(t0); src.stop(t0+dur+0.02);
   },
-  /* name — событие; троттлинг не даёт одинаковым звукам захлёбываться */
+  /* name — событие; троттлинг не даёт одинаковым звукам захлёбываться.
+     Любой сбой WebAudio (прерывание на iOS и т.п.) глушит движок, но не игру */
   play(name){
+    if (!this.ctx || !S.sound) return;
+    try{
+      this._play(name);
+    }catch(e){
+      try{ this.ctx.close(); }catch(e2){}
+      this.ctx = null;
+    }
+  },
+  _play(name){
     if (!this.ctx || !S.sound) return;
     const now = this.ctx.currentTime;
     const gaps = { pulse:0.055, tesla:0.09, boom:0.07, beamtick:0.1, click:0.03, coin:0.09, hit:0.05, snipe:0.06 };
@@ -2165,6 +2175,18 @@ function startWave(){
 }
 
 function waveClear(){
+  try{ waveClearInner(); }
+  catch(e){
+    reportErr(e);
+    // страховка: волна должна завершиться даже при сбое — иначе игра встанет
+    if (G.state === 'play'){
+      G.waveState = 'prep';
+      G.nextWave = buildWave(G.mapIdx, Math.min(G.wave+1, G.endless ? 9999 : WAVES_PER_MAP), G.endless);
+      UI.refreshWaveUI();
+    }
+  }
+}
+function waveClearInner(){
   const bonus = Math.round((15 + G.wave*2) * metaVals().rewardMul);
   G.cash += bonus; S.stats.money += bonus;
   AudioSys.play('coin');
@@ -2200,22 +2222,39 @@ function waveClear(){
 }
 
 function victory(){
-  G.state = 'won';
-  const ms = mapSave(G.mapIdx);
-  const beforeStars = totalStars();
-  const lost = G.maxLives - G.lives;
-  const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
-  const firstWin = ms.stars === 0;
-  const earned = (firstWin ? 8 + 2*G.mapIdx : 0) + Math.max(0, stars - ms.stars)*3;
-  ms.stars = Math.max(ms.stars, stars);
-  if (earned > 0) addCores(earned);
-  // что разблокировалось
-  const newMaps = MAPS.map((m,i)=>i).filter(i=>MAPS[i].need > beforeStars && MAPS[i].need <= totalStars());
-  const newTowers = TOWER_ORDER.filter(tp=>UNLOCK_STARS[tp] > beforeStars && UNLOCK_STARS[tp] <= totalStars() && UNLOCK_STARS[tp] > 0);
-  persist(); checkAch();
-  AudioSys.play('win');
-  haptic('success');
-  UI.openVictory({ stars, earned, firstWin, newMaps, newTowers });
+  try{
+    G.state = 'won';
+    const ms = mapSave(G.mapIdx);
+    const beforeStars = totalStars();
+    const lost = G.maxLives - G.lives;
+    const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
+    const firstWin = ms.stars === 0;
+    const earned = (firstWin ? 8 + 2*G.mapIdx : 0) + Math.max(0, stars - ms.stars)*3;
+    ms.stars = Math.max(ms.stars, stars);
+    if (earned > 0) addCores(earned);
+    // что разблокировалось
+    const newMaps = MAPS.map((m,i)=>i).filter(i=>MAPS[i].need > beforeStars && MAPS[i].need <= totalStars());
+    const newTowers = TOWER_ORDER.filter(tp=>UNLOCK_STARS[tp] > beforeStars && UNLOCK_STARS[tp] <= totalStars() && UNLOCK_STARS[tp] > 0);
+    persist(); checkAch();
+    AudioSys.play('win');
+    haptic('success');
+    UI.openVictory({ stars, earned, firstWin, newMaps, newTowers });
+  }catch(e){
+    // победа не должна замораживать игру ни при каких условиях — рисуем минимальное окно напрямую
+    reportErr(e);
+    try{
+      UI.modal(
+        '<h3 class="lime">'+t('v_title')+'</h3>'+
+        '<div class="m-btns">'+
+        '<button class="btn primary big" id="fb-endless">'+t('v_endless_btn')+'</button>'+
+        '<button class="btn big" id="fb-lab">'+t('v_lab')+'</button>'+
+        '<button class="btn ghost big" id="fb-maps">'+t('v_maps')+'</button></div>'
+      );
+      $('fb-endless').addEventListener('click', ()=>{ UI.closeModal(); startGame(G.mapIdx, true); });
+      $('fb-lab').addEventListener('click', ()=>{ UI.closeModal(); UI.showScreen('lab'); });
+      $('fb-maps').addEventListener('click', ()=>{ UI.closeModal(); UI.showScreen('maps'); UI.renderMaps(); });
+    }catch(e2){ reportErr(e2); }
+  }
 }
 
 function defeat(){
@@ -2271,6 +2310,7 @@ G.shake = function(amp){
 
 /* Нова ядра: разряд накопленного заряда по всем вирусам на поле */
 function coreNova(){
+  try{
   G.coreCharge = 0;
   const cx = V.ox+(G.core[0]+0.5)*V.cs, cy = V.oy+(G.core[1]+0.5)*V.cs;
   ring(cx, cy, '#9ef7ff', 10, 14*V.cs, 0.7, 4);
@@ -2282,6 +2322,7 @@ function coreNova(){
     if (!e.alive || e.dead) continue;
     damage(e, e.maxhp*0.10 + 15, 99, true);
   }
+  }catch(e){ reportErr(e); }
 }
 
 /* ---- Способности ---- */
@@ -3203,7 +3244,8 @@ const UI = {
       '<button class="btn" id="m-imp">'+t('s_import')+'</button>'+
       '<button class="btn danger" id="m-reset">'+t('s_reset')+'</button>'+
       '<button class="btn primary" id="m-close">'+t('p_resume')+'</button></div>'+
-      '<div class="m-text" style="margin-top:12px">'+t('s_note')+'</div>'
+      '<div class="m-text" style="margin-top:12px">'+t('s_note')+'</div>'+
+      lastErrHtml()
     );
     $('m-snd-on').addEventListener('click', ()=>{ setSound(true); this.openSettings(); });
     $('m-snd-off').addEventListener('click', ()=>{ setSound(false); this.openSettings(); });
@@ -3302,6 +3344,13 @@ const UI = {
 };
 
 /* Характеристики башни строками — общие для инспектора и тултипа */
+/* Последние ошибки с этого устройства — для отчёта разработчику */
+function lastErrHtml(){
+  let arr = [];
+  try{ arr = JSON.parse(localStorage.getItem('nc_errs')||'[]'); }catch(e){}
+  if (!arr.length) return '';
+  return '<div class="m-text" style="margin-top:10px;color:var(--red);text-align:left">⚠ '+t('s_lasterr')+'<br>'+arr.map(x=>'· '+x).join('<br>')+'</div>';
+}
 function statList(kind, lv){
   const M = Math.round(lv.dmg*metaVals().dmgMul);
   switch (kind){
@@ -3698,7 +3747,13 @@ function queueFrame(){
 let lastErrToast = 0;
 function reportErr(e){
   console.error('[NEON CORE]', e);
-  (window.__errs = window.__errs || []).push(String(e && e.message || e));
+  const msg = String(e && e.message || e).slice(0, 200);
+  (window.__errs = window.__errs || []).push(msg);
+  try{ // запоминаем последние ошибки — их видно в настройках, чтобы прислать скрин
+    const arr = JSON.parse(localStorage.getItem('nc_errs')||'[]');
+    arr.unshift(new Date().toLocaleTimeString()+' — '+msg);
+    localStorage.setItem('nc_errs', JSON.stringify(arr.slice(0,5)));
+  }catch(e2){}
   const now = performance.now();
   if (now - lastErrToast > 5000){
     lastErrToast = now;
