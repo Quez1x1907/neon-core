@@ -763,6 +763,14 @@ const TOWERS = {
       b:{ key:'br_amp_b', lv:{boost:0.75, range:2.3, up:140} } } },
 };
 const TOWER_ORDER = ['pulse','cryo','missile','tesla','toxin','sniper','bank','beam','amp'];
+/* Цены улучшений: +25% к базовым — прокачать всё подряд невозможно */
+for (const tk in TOWERS){
+  TOWERS[tk].lv.forEach(l=>{ if (l.up) l.up = Math.round(l.up*1.25); });
+  if (TOWERS[tk].branches) for (const bk in TOWERS[tk].branches){
+    const bl = TOWERS[tk].branches[bk].lv;
+    if (bl.up) bl.up = Math.round(bl.up*1.25);
+  }
+}
 /* Открытие башен за суммарные звёзды */
 const UNLOCK_STARS = { pulse:0, cryo:0, missile:0, tesla:4, sniper:8, toxin:10, bank:12, beam:16, amp:7 };
 
@@ -1493,9 +1501,11 @@ function hpMulFor(wave, mult){
   const warm = 0.55 + 0.45*Math.min(wave,10)/10;
   return (1 + (mult-1)*warm) * Math.pow(1.115, wave-1) * (1 + 0.03*wave);
 }
-/* Награда с учётом карты и мета-прокачки. Глобальный множитель 0.7 — экономика строже */
+/* Награда с учётом карты и мета-прокачки. Экономика строже: множитель 0.7,
+   а после 10-й волны награда затухает (−4% за волну) — иначе к концу копится мешок денег */
 function rewardMulFor(wave, mult){
-  return 0.7 * (1 + (wave-1)*0.02) * (0.6 + 0.4*mult) * metaVals().rewardMul;
+  const decay = wave <= 10 ? 1 : Math.pow(0.96, wave-10);
+  return 0.7 * decay * (1 + (wave-1)*0.02) * (0.6 + 0.4*mult) * metaVals().rewardMul;
 }
 
 /* Нанесение урона: armor гасит, pierce пробивает, щит впитывает. src — тип источника для статистики */
@@ -2980,6 +2990,7 @@ const UI = {
   showTipAt(html, anchorEl){
     const el = this.els.tt;
     if (!el) return;
+    this.tipAnchor = anchorEl;   // если якорь исчезнет из DOM — тултип закроется сам
     el.innerHTML = html;
     el.hidden = false;
     const r = anchorEl.getBoundingClientRect();
@@ -3002,7 +3013,12 @@ const UI = {
   },
   hideTip(){
     if (this.els.tt) this.els.tt.hidden = true;
+    this.tipAnchor = null;
     clearTimeout(this._tipT);
+  },
+  /* тултип не должен «висеть в воздухе», когда его кнопка пересоздана перерисовкой */
+  hideTipIfOrphaned(){
+    if (this.els.tt && !this.els.tt.hidden && this.tipAnchor && !document.contains(this.tipAnchor)) this.hideTip();
   },
   syncBuildbar(){
     this.els.buildbar.querySelectorAll('.tcard').forEach(card=>{
@@ -3102,6 +3118,7 @@ const UI = {
   /* ---------- инспектор башни ---------- */
   renderInspector(){
     const el = this.els.inspector;
+    this.hideTipIfOrphaned();
     const tw = G.selected;
     document.body.classList.toggle('ins-open', !!tw);
     if (!tw){ el.classList.remove('open'); return; }
@@ -3694,6 +3711,8 @@ function initInput(){
   ro.observe($('boardwrap'));
   window.addEventListener('resize', ()=>computeView());
 
+  // любой тап в любом месте прячет тултипы
+  window.addEventListener('pointerdown', ()=>UI.hideTip(), true);
   // Разблокировка звука и автопауза
   window.addEventListener('pointerdown', ()=>AudioSys.resume(), { passive:true });
   document.addEventListener('visibilitychange', ()=>{
