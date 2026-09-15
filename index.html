@@ -2248,7 +2248,8 @@ function victory(){
         '<div class="m-btns">'+
         '<button class="btn primary big" id="fb-endless">'+t('v_endless_btn')+'</button>'+
         '<button class="btn big" id="fb-lab">'+t('v_lab')+'</button>'+
-        '<button class="btn ghost big" id="fb-maps">'+t('v_maps')+'</button></div>'
+        '<button class="btn ghost big" id="fb-maps">'+t('v_maps')+'</button></div>',
+        true
       );
       $('fb-endless').addEventListener('click', ()=>{ UI.closeModal(); startGame(G.mapIdx, true); });
       $('fb-lab').addEventListener('click', ()=>{ UI.closeModal(); UI.showScreen('lab'); });
@@ -3042,6 +3043,11 @@ const UI = {
     e.abOver.classList.toggle('cd', over.cd > 0 && over.active <= 0);
     e.abOver.classList.toggle('act', over.active > 0);
     e.btnAuto.classList.toggle('on', !!S.auto);
+    // страховка: экран конца партии не может остаться закрытым — переоткрываем
+    if ((G.state === 'won' || G.state === 'lost') && this.els.overlay.hidden && this.cur === 'game'){
+      if (G.state === 'won' && this.lastEnd && this.lastEnd.type === 'won') this.openVictory(this.lastEnd.r);
+      else if (G.state === 'lost') this.openDefeat();
+    }
     // босс
     if (G.bossRef && G.bossRef.alive && !G.bossRef.dead){
       e.bossbar.classList.add('show');
@@ -3203,9 +3209,15 @@ const UI = {
   },
   bossHide(){ this.els.bossbar.classList.remove('show'); },
 
-  /* ---------- модалки ---------- */
-  modal(html){ this.els.modal.innerHTML = html; this.els.overlay.hidden = false; },
-  closeModal(){ this.els.overlay.hidden = true; this.els.modal.innerHTML = ''; },
+  /* ---------- модалки ----------
+     sticky=true — экраны конца партии (победа/поражение): тап по фону и Esc их не закрывают,
+     у игрока всегда остаются кнопки выхода */
+  modal(html, sticky){
+    this.els.modal.innerHTML = html;
+    this.els.overlay.hidden = false;
+    this.modalSticky = !!sticky;
+  },
+  closeModal(){ this.els.overlay.hidden = true; this.els.modal.innerHTML = ''; this.modalSticky = false; },
 
   openPause(){
     if (G.state !== 'play') return;
@@ -3288,6 +3300,7 @@ const UI = {
     });
   },
   openVictory(r){
+    this.lastEnd = { type:'won', r };
     const starsHtml = [1,2,3].map(k=>
       ICONS.star.replace('<svg','<svg class="'+(k<=r.stars?'on':'')+'" style="animation-delay:'+(k*0.25)+'s"')).join('');
     const unlocks = [];
@@ -3310,7 +3323,8 @@ const UI = {
       (hasNext ? '<button class="btn primary big" id="v-next">'+t('v_next')+'</button>' : '')+
       '<button class="btn big" id="v-endless">'+t('v_endless_btn')+'</button>'+
       '<button class="btn big" id="v-lab">'+t('v_lab')+'</button>'+
-      '<button class="btn ghost big" id="v-maps">'+t('v_maps')+'</button></div>'
+      '<button class="btn ghost big" id="v-maps">'+t('v_maps')+'</button></div>',
+      true
     );
     const svgs = this.els.modal.querySelectorAll('.v-stars svg');
     svgs.forEach(s=>s.classList.add('pop'));
@@ -3321,12 +3335,14 @@ const UI = {
     $('v-maps').addEventListener('click', ()=>{ this.closeModal(); this.showScreen('maps'); this.renderMaps(); });
   },
   openDefeat(){
+    this.lastEnd = { type:'lost' };
     this.modal(
       '<h3 class="pink">'+t('d_title')+'</h3>'+
       '<div class="m-text">'+t('d_wave', { n:Math.max(1,G.wave) })+'</div>'+
       '<div class="m-btns">'+
       '<button class="btn primary big" id="d-retry">'+t('d_retry')+'</button>'+
-      '<button class="btn big" id="d-maps">'+t('d_maps')+'</button></div>'
+      '<button class="btn big" id="d-maps">'+t('d_maps')+'</button></div>',
+      true
     );
     $('d-retry').addEventListener('click', ()=>{ this.closeModal(); startGame(G.mapIdx, G.endless); });
     $('d-maps').addEventListener('click', ()=>{ this.closeModal(); exitGame(); });
@@ -3628,7 +3644,12 @@ function initInput(){
     if (ev.repeat) return;
     const k = ev.key;
     if (k === 'Escape'){
-      if (!UI.els.overlay.hidden){ UI.closeModal(); if (G.state === 'paused') G.state = 'play'; return; }
+      if (!UI.els.overlay.hidden){
+        if (UI.modalSticky) return;             // победа/поражение — только кнопками
+        UI.closeModal();
+        if (G.state === 'paused') G.state = 'play';
+        return;
+      }
       if (G.placing){ G.placing = null; UI.syncBuildbar(); return; }
       if (G.selected){ G.selected = null; UI.renderInspector(); return; }
       return;
@@ -3661,9 +3682,11 @@ function initInput(){
     if ((k === 'x' || k === 'X' || k === 'ч' || k === 'Ч') && G.selected) sellTower(G.selected);
   });
 
-  // Клик по оверлею вне модалки — закрыть (кроме паузы)
+  // Клик по оверлею вне модалки — закрыть (кроме паузы и экранов конца партии)
   UI.els.overlay.addEventListener('pointerdown', (ev)=>{
-    if (ev.target === UI.els.overlay && G.state !== 'paused') UI.closeModal();
+    if (ev.target !== UI.els.overlay) return;
+    if (UI.modalSticky) return;                 // победа/поражение закрываются только кнопками
+    if (G.state !== 'paused') UI.closeModal();
   });
 
   // Ресайз канвы
