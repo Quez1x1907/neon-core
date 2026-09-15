@@ -201,6 +201,14 @@ h1,h2,h3{font-weight:600}
 #inspector .i-btns{display:flex;gap:8px;flex-wrap:wrap}
 #inspector .i-btns .btn{padding:8px 12px;font-size:11px;flex:1;min-width:70px}
 #inspector .i-next{font-family:var(--mono);font-size:11px;color:var(--lime);margin-bottom:8px}
+#inspector .i-diff{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;font-family:var(--mono);font-size:11.5px}
+#inspector .i-drow{display:flex;align-items:center;gap:6px}
+#inspector .i-drow span{color:var(--dim);flex:1}
+#inspector .i-drow b{font-weight:600;color:var(--text)}
+#inspector .i-drow em{font-style:normal;color:var(--dim)}
+@media (max-width:560px){
+  body.ins-open #nextwave{display:none}
+}
 
 /* баннер волны */
 #wavebanner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:7}
@@ -734,10 +742,10 @@ const TOWERS = {
       a:{ key:'br_sniper_a', lv:{dmg:120, rate:0.45, range:6.5, pierce:30, up:180} },
       b:{ key:'br_sniper_b', lv:{dmg:200, rate:0.55, range:6.0, pierce:8, up:180} } } },
   bank:{ key:'tw_bank', cost:100, color:'#a8ff3e', kind:'bank',
-    lv:[{prod:2, cycle:2.5},{prod:4, cycle:2.5, up:85}],
+    lv:[{prod:2, cycle:3},{prod:3, cycle:3, up:85}],
     branches:{
-      a:{ key:'br_bank_a', lv:{prod:6, cycle:2.0, up:160} },
-      b:{ key:'br_bank_b', lv:{prod:12, cycle:3.5, up:160} } } },
+      a:{ key:'br_bank_a', lv:{prod:5, cycle:2.2, up:160} },
+      b:{ key:'br_bank_b', lv:{prod:9, cycle:3.2, up:160} } } },
   beam:{ key:'tw_beam', cost:140, color:'#ff7a2d', kind:'beam',
     lv:[{dmg:22, range:3.2, ramp:0.4},{dmg:34, range:3.4, ramp:0.5, up:110}],
     branches:{
@@ -801,30 +809,33 @@ const MUT = {
 const TYPE_THRESH = { drone:1, sprinter:4, bit:7, tank:10, mender:13, phantom:16, aegis:18, splitter:12 };
 const TECH_FLOOR  = { drone:0, sprinter:1, bit:2, tank:3, mender:4, phantom:5, aegis:6, splitter:3 };
 
-/* ---- Карты: waypoints в клетках, последняя точка — ядро.
-   С середины кампании враги идут с нескольких независимых путей. ---- */
+/* ---- Карты: waypoints в клетках, последняя точка каждой трассы — ядро.
+   Дороги удлинены; стройка разрешена только в зонах рядом с трассой. ---- */
 const MAPS = [
-  { key:'map_boot',    mult:1.0,  need:0,  color:'#00e5ff',
-    paths:[[[-1,2],[8,2],[8,6],[2,6]]], deco:[[4,4],[5,4],[6,4]] },
-  { key:'map_spiral',  mult:1.12, need:3,  color:'#9d5cff',
-    paths:[[[-1,1],[10,1],[10,7],[1,7],[1,3],[7,3],[7,5]]], deco:[[3,5],[4,5]] },
-  { key:'map_fork',    mult:1.22, need:6,  color:'#a8ff3e',
-    paths:[[[-1,1],[5,1],[5,4],[10,4]],[[-1,7],[5,7],[5,4],[10,4]]], deco:[[2,4],[3,4]] },
-  { key:'map_serpent', mult:1.28, need:9,  color:'#ffb020',
-    paths:[[[-1,1],[10,1],[10,4],[1,4],[1,7],[5,7]],
-           [[12,5],[8,5],[8,7],[5,7]]], deco:[[7,3],[3,2],[5,3],[4,6]] },
-  { key:'map_vortex',  mult:1.46, need:12, color:'#ff2d78',
-    paths:[[[-1,1],[4,1],[4,4],[8,4],[8,2],[10,2]],[[-1,7],[4,7],[4,4],[8,4],[8,2],[10,2]]], deco:[[6,0],[2,6],[6,6]] },
-  { key:'map_siege',   mult:1.52,  need:15, color:'#4dc3ff',
-    paths:[[[-1,3],[4,3],[4,1],[8,1]],[[12,5],[8,5],[8,1]]], deco:[[2,6],[3,6],[2,7],[6,3]] },
+  { key:'map_boot', mult:1.0, need:0, color:'#00e5ff',
+    paths:[[[-1, 2], [7, 2], [7, 4], [2, 4], [2, 6], [9, 6]]], deco:[[4, 3], [6, 5], [5, 3]] },
+  { key:'map_spiral', mult:1.12, need:3, color:'#9d5cff',
+    paths:[[[-1, 1], [10, 1], [10, 7], [1, 7], [1, 3], [8, 3], [8, 5], [4, 5]]], deco:[[3, 4], [5, 4], [6, 6], [3, 6]] },
+  { key:'map_fork', mult:1.22, need:6, color:'#a8ff3e',
+    paths:[[[-1, 1], [9, 1], [9, 3], [2, 3], [2, 6], [10, 6]],
+    [[-1, 7], [1, 7], [1, 4], [6, 4], [6, 6], [10, 6]]], deco:[[4, 2], [7, 2], [8, 4], [8, 7]] },
+  { key:'map_serpent', mult:1.28, need:9, color:'#ffb020',
+    paths:[[[-1, 1], [10, 1], [10, 2], [1, 2], [1, 4], [10, 4], [10, 6], [4, 6]],
+    [[12, 8], [2, 8], [2, 6], [4, 6]]], deco:[[6, 3], [3, 3], [8, 5], [8, 7]] },
+  { key:'map_vortex', mult:1.46, need:12, color:'#ff2d78',
+    paths:[[[-1, 1], [4, 1], [4, 4], [8, 4], [8, 2], [10, 2], [10, 5], [5, 5], [5, 7], [2, 7]],
+    [[12, 7], [8, 7], [8, 5], [5, 5], [5, 7], [3, 7], [3, 6], [2, 6], [2, 7]]], deco:[[2, 2], [6, 2], [11, 3], [7, 7]] },
+  { key:'map_siege', mult:1.52, need:15, color:'#4dc3ff',
+    paths:[[[-1, 2], [6, 2], [6, 4], [2, 4], [2, 7], [9, 7], [9, 5], [10, 5]],
+    [[12, 4], [11, 4], [11, 8], [5, 8], [5, 6], [8, 6], [8, 5], [10, 5]]], deco:[[3, 1], [7, 3], [4, 5], [0, 6]] },
   { key:'map_bastion', mult:1.6, need:18, color:'#ff3355',
-    paths:[[[-1,1],[3,1],[3,4],[6,4]],
-           [[12,7],[9,7],[9,4],[6,4]],
-           [[-1,8],[2,8],[2,6],[6,6],[6,4]]], deco:[[5,1],[7,2],[4,7],[8,8]] },
-  { key:'map_trinity', mult:1.6,  need:21, color:'#00ff9d',
-    paths:[[[-1,1],[5,1],[5,4]],
-           [[-1,7],[5,7],[5,4]],
-           [[12,0],[8,0],[8,4],[5,4]]], deco:[[2,3],[3,5],[8,6],[10,6]] },
+    paths:[[[-1, 1], [3, 1], [3, 3], [8, 3], [8, 1], [10, 1], [10, 4], [6, 4]],
+    [[12, 7], [9, 7], [9, 5], [4, 5], [4, 7], [2, 7], [2, 5], [6, 5], [6, 4]],
+    [[-1, 8], [7, 8], [7, 6], [6, 6], [6, 4]]], deco:[[5, 2], [1, 3], [9, 8], [8, 6]] },
+  { key:'map_trinity', mult:1.6, need:21, color:'#00ff9d',
+    paths:[[[-1, 1], [2, 1], [2, 3], [8, 3], [8, 1], [10, 1], [10, 4], [5, 4]],
+    [[-1, 7], [2, 7], [2, 5], [8, 5], [8, 7], [10, 7], [10, 4], [5, 4]],
+    [[12, 0], [9, 0], [9, 2], [11, 2], [11, 6], [3, 6], [3, 4], [5, 4]]], deco:[[4, 2], [6, 2], [7, 2], [0, 4]] },
 ];
 
 /* ---- Мета-прокачка (за ядра данных) ---- */
@@ -1472,9 +1483,9 @@ function hpMulFor(wave, mult){
   const warm = 0.55 + 0.45*Math.min(wave,10)/10;
   return (1 + (mult-1)*warm) * Math.pow(1.115, wave-1) * (1 + 0.03*wave);
 }
-/* Награда с учётом карты и мета-прокачки */
+/* Награда с учётом карты и мета-прокачки. Глобальный множитель 0.7 — экономика строже */
 function rewardMulFor(wave, mult){
-  return (1 + (wave-1)*0.02) * (0.6 + 0.4*mult) * metaVals().rewardMul;
+  return 0.7 * (1 + (wave-1)*0.02) * (0.6 + 0.4*mult) * metaVals().rewardMul;
 }
 
 /* Нанесение урона: armor гасит, pierce пробивает, щит впитывает. src — тип источника для статистики */
@@ -1695,7 +1706,7 @@ const bctx = boardCv.getContext('2d');
 
 const G = {
   active:false, mapIdx:0, map:null, endless:false,
-  paths:[], pathCells:new Set(), deco:new Set(), pathPxs:[], core:null,
+  paths:[], pathCells:new Set(), deco:new Set(), buildable:new Set(), pathPxs:[], core:null,
   cash:0, lives:0, maxLives:20, wave:0, waveState:'prep', waveT:0, events:[],
   curWave:null, nextWave:null, enemiesCount:0, bossRef:null,
   state:'play', speed:1, slowmoT:0, coreFlash:0, cleanStreak:0, leaksThisWave:0,
@@ -1727,6 +1738,17 @@ function computePaths(map){
     for (const [c,r] of pts)
       if (c>=0 && c<COLS && r>=0 && r<ROWS) G.pathCells.add(c+','+r);
   G.deco = new Set(map.deco.map(d=>d[0]+','+d[1]));
+  // зоны стройки: свободные клетки вокруг трассы (8 соседей)
+  G.buildable = new Set();
+  for (const k of G.pathCells){
+    const [pc, pr] = k.split(',').map(Number);
+    for (let dc=-1; dc<=1; dc++) for (let dr=-1; dr<=1; dr++){
+      const c = pc+dc, r = pr+dr;
+      if (c<0 || r<0 || c>=COLS || r>=ROWS) continue;
+      const bk = c+','+r;
+      if (!G.pathCells.has(bk) && !G.deco.has(bk)) G.buildable.add(bk);
+    }
+  }
   G.core = G.paths[0][G.paths[0].length-1];
 }
 function computePathPxs(){
@@ -1742,7 +1764,9 @@ function computeView(){
   V.w = w; V.h = h;
   boardCv.width = Math.round(w*V.dpr); boardCv.height = Math.round(h*V.dpr);
   V.cs = Math.min(w/COLS, h/ROWS);
-  V.ox = (w - V.cs*COLS)/2; V.oy = (h - V.cs*ROWS)/2;
+  V.ox = (w - V.cs*COLS)/2;
+  const slackY = h - V.cs*ROWS;
+  V.oy = slackY > V.cs*2 ? 2 : slackY/2; // портрет: поле прижато к HUD, пустота уходит к кнопке волны
   computePathPxs();
   renderBoardBG();
   renderGame(); // ресайз мог случиться на паузе — кадр должен остаться актуальным
@@ -1786,7 +1810,7 @@ function exitGame(){
 function canPlace(c,r){
   if (c<0||r<0||c>=COLS||r>=ROWS) return false;
   const k = c+','+r;
-  return !G.pathCells.has(k) && !G.deco.has(k) && !G.towerGrid.has(k);
+  return G.buildable.has(k) && !G.towerGrid.has(k);
 }
 function towerAt(c,r){ return G.towerGrid.get(c+','+r) || null; }
 
@@ -2141,7 +2165,7 @@ function startWave(){
 }
 
 function waveClear(){
-  const bonus = Math.round((20 + G.wave*3) * metaVals().rewardMul);
+  const bonus = Math.round((15 + G.wave*2) * metaVals().rewardMul);
   G.cash += bonus; S.stats.money += bonus;
   AudioSys.play('coin');
   const cx = V.ox+(G.core[0]+0.5)*V.cs, cy = V.oy+(G.core[1]+0.5)*V.cs;
@@ -2302,11 +2326,21 @@ function strokePoly(c, pts){
 
 function renderBoardBG(){
   if (!G.active || !G.map || !V.w) return;
+  const BL = 24; // запас под тряску, рисуется 1:1 — сетка не растягивается
   boardBG = document.createElement('canvas');
-  boardBG.width = Math.max(1, Math.round(V.w*V.dpr));
-  boardBG.height = Math.max(1, Math.round(V.h*V.dpr));
+  boardBG.width = Math.max(1, Math.round((V.w+BL*2)*V.dpr));
+  boardBG.height = Math.max(1, Math.round((V.h+BL*2)*V.dpr));
   const c = boardBG.getContext('2d');
   c.scale(V.dpr, V.dpr);
+  c.translate(BL, BL);
+  V.w += BL*2; V.h += BL*2;      // рисуем расширенный фон
+  drawBGContent(c);
+  V.w -= BL*2; V.h -= BL*2;      // возвращаем рабочие размеры
+}
+
+function drawBGContent(c){
+  const Vw = V.w + 48, Vh = V.h + 48; // покрытие с запасом за края экрана
+  {
   // фон
   const g = c.createLinearGradient(0,0,V.w,V.h);
   g.addColorStop(0,'#070b18'); g.addColorStop(0.5,'#05070f'); g.addColorStop(1,'#0a0f22');
@@ -2349,6 +2383,14 @@ function renderBoardBG(){
       const x = V.ox+(cc+0.5)*V.cs, y = V.oy+(cr+0.5)*V.cs;
       c.beginPath(); c.arc(x, y, Math.max(1.5, V.cs*0.045), 0, TAU); c.fill();
     }
+  }
+  // площадки стройки: едва заметные скругления в зонах
+  c.strokeStyle = 'rgba(0,229,255,0.14)';
+  c.lineWidth = 1;
+  for (const k of G.buildable){
+    const [cc,cr] = k.split(',').map(Number);
+    rr(c, V.ox+cc*V.cs+3, V.oy+cr*V.cs+3, V.cs-6, V.cs-6, 4); c.stroke();
+  }
   }
 }
 
@@ -2431,6 +2473,12 @@ function drawEnemies(ctx){
     ctx.save();
     ctx.globalAlpha = alpha;
     drawEnemyShape(ctx, e.def.shape, px, py, R, e.ang, e.hitF > 0 ? '#ffffff' : col, Math.max(1.5, V.cs*0.055), G.time, e.id);
+    // мерцающий двигатель позади
+    const thx = px - Math.cos(e.ang)*R*1.15, thy = py - Math.sin(e.ang)*R*1.15;
+    ctx.globalAlpha = alpha * (0.25 + 0.35*Math.abs(Math.sin(G.time*13 + e.id)));
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(thx, thy, Math.max(1.2, R*0.14), 0, TAU); ctx.fill();
+    ctx.globalAlpha = alpha;
     if (e.stunT > 0 && Math.random() < 0.35) burst(px, py - R, '#ffd12d', 1, 45, 0.3);
     // пузырьки яда
     if (e.poisonS > 0){
@@ -2691,8 +2739,8 @@ function renderGame(){
   ctx.save();
   try{
     ctx.translate(sx, sy);
-    // фон непрозрачный и рисуется с запасом на тряску — clearRect не нужен
-    if (boardBG) ctx.drawImage(boardBG, -20, -20, V.w+40, V.h+40);
+    // фон непрозрачный, нарисован с запасом и накладывается 1:1 — сетка не плывёт
+    if (boardBG) ctx.drawImage(boardBG, -24, -24, (V.w+48), (V.h+48));
     drawPathFlow(ctx);
     drawPortals(ctx);
     drawCore(ctx);
@@ -3008,6 +3056,7 @@ const UI = {
   renderInspector(){
     const el = this.els.inspector;
     const tw = G.selected;
+    document.body.classList.toggle('ins-open', !!tw);
     if (!tw){ el.classList.remove('open'); return; }
     const def = TOWERS[tw.type], lv = lvOf(tw);
     const key = tw.id+':'+tw.lvl+':'+Math.round(G.cash);
@@ -3017,18 +3066,7 @@ const UI = {
     const atBranch = tw.lvl === 1 && def.branches && !tw.branch; // пора выбрать специализацию
     let nextLine = '';
     if (!atBranch && tw.lvl+1 < def.lv.length){
-      const nl = def.lv[tw.lvl+1];
-      const cur = def.kind==='cryo' ? Math.round(lv.slow*100)+'%' :
-                  def.kind==='bank' ? '$'+lv.prod :
-                  def.kind==='amp' ? '+'+Math.round(lv.boost*100)+'%' :
-                  def.kind==='poison' ? lv.dmg :
-                  def.kind==='beam' ? lv.dmg : Math.round(lv.dmg*metaVals().dmgMul);
-      const nxt = def.kind==='cryo' ? Math.round(nl.slow*100)+'%' :
-                  def.kind==='bank' ? '$'+nl.prod :
-                  def.kind==='amp' ? '+'+Math.round(nl.boost*100)+'%' :
-                  def.kind==='poison' ? nl.dmg :
-                  def.kind==='beam' ? nl.dmg : Math.round(nl.dmg*metaVals().dmgMul);
-      nextLine = '<div class="i-next">'+t('next_lvl')+' '+cur+' → '+nxt+'</div>';
+      nextLine = statDiffGrid(def.kind, lv, def.lv[tw.lvl+1]);
     }
     const modes = ['first','last','strong'];
     const pips = [1,2,3].map(k=>'<i class="'+(k<=tw.lvl+1?'on':'')+'"></i>').join('');
@@ -3037,7 +3075,7 @@ const UI = {
     let upButtons = '';
     if (atBranch){
       const brBtn = (br, cls)=>'<button class="btn primary '+cls+'" id="ins-br-'+br+'" title="'+
-        t('next_lvl')+' '+t(def.branches[br].key)+'" style="flex:1">'+t(def.branches[br].key)+' $'+def.branches[br].lv.up+'</button>';
+        t(def.branches[br].key)+': '+statList(def.kind, def.branches[br].lv).map(r=>r[0]+' '+r[1]).join(', ')+'" style="flex:1">'+t(def.branches[br].key)+' $'+def.branches[br].lv.up+'</button>';
       upButtons = brBtn('a','') + brBtn('b','');
     } else if (tw.lvl+1 < def.lv.length){
       upButtons = '<button class="btn primary" id="ins-up" style="flex:2">'+t('upgrade')+' $'+upCost+'</button>';
@@ -3069,7 +3107,19 @@ const UI = {
     const brB = el.querySelector('#ins-br-b');
     if (brB) brB.addEventListener('click', ()=>{ chooseBranch(tw, 'b'); this.insKey=''; this.renderInspector(); });
     const ubtn = el.querySelector('#ins-up');
-    if (ubtn) ubtn.addEventListener('click', ()=>{ upgradeTower(tw); this.insKey=''; this.renderInspector(); });
+    if (ubtn){
+      ubtn.addEventListener('click', ()=>{ upgradeTower(tw); this.insKey=''; this.renderInspector(); });
+      ubtn.addEventListener('pointerenter', (ev)=>{
+        if (ev.pointerType !== 'mouse') return;
+        const nl = def.lv[tw.lvl+1];
+        this.showTipAt(
+          '<div class="tt-name" style="color:'+def.color+'">'+t('next_lvl')+'</div>'+
+          '<div class="tt-rows">'+towerStatRows(def.kind, nl)+'</div>',
+          ubtn
+        );
+      });
+      ubtn.addEventListener('pointerleave', ()=>this.hideTip());
+    }
     const sbtn = el.querySelector('#ins-sell');
     if (sbtn) sbtn.addEventListener('click', ()=>{ sellTower(tw); this.renderInspector(); });
   },
@@ -3252,44 +3302,43 @@ const UI = {
 };
 
 /* Характеристики башни строками — общие для инспектора и тултипа */
-function towerStatRows(kind, lv){
-  const row = (l,v)=>'<span>'+l+'</span><b>'+v+'</b>';
+function statList(kind, lv){
+  const M = Math.round(lv.dmg*metaVals().dmgMul);
   switch (kind){
     case 'gun': case 'sniper':
-      return row(t('st_dmg'), Math.round(lv.dmg*metaVals().dmgMul)) +
-             row(t('st_rate'), lv.rate+t('sec_per')) +
-             row(t('st_range'), lv.range) +
-             (lv.pierce ? row(t('st_pierce'), lv.pierce) : row('',''));
+      return [[t('st_dmg'), M], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]]
+        .concat(lv.pierce ? [[t('st_pierce'), lv.pierce]] : []);
     case 'missile':
-      return row(t('st_dmg'), Math.round(lv.dmg*metaVals().dmgMul)) +
-             row(t('st_splash'), lv.splash) +
-             row(t('st_rate'), lv.rate+t('sec_per')) +
-             row(t('st_range'), lv.range);
+      return [[t('st_dmg'), M], [t('st_splash'), lv.splash], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]];
     case 'tesla':
-      return row(t('st_dmg'), Math.round(lv.dmg*metaVals().dmgMul)) +
-             row(t('st_chain'), lv.chain) +
-             row(t('st_rate'), lv.rate+t('sec_per')) +
-             row(t('st_range'), lv.range);
+      return [[t('st_dmg'), M], [t('st_chain'), lv.chain], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]];
     case 'cryo':
-      return row(t('st_slow'), Math.round(lv.slow*100)+'%') +
-             row(t('st_dps'), Math.round(lv.dmg*metaVals().dmgMul)) +
-             row(t('st_range'), lv.range) + row('','');
+      return [[t('st_slow'), Math.round(lv.slow*100)+'%'], [t('st_dps'), Math.round(lv.dmg*metaVals().dmgMul)], [t('st_range'), lv.range]];
     case 'bank':
-      return row(t('st_prod'), '$'+lv.prod+'/'+lv.cycle+'s') + row('','');
+      return [[t('st_prod'), '$'+lv.prod+'/'+lv.cycle+'s']];
     case 'amp':
-      return row(t('st_amp'), '+'+Math.round(lv.boost*100)+'%') +
-             row(t('st_range'), lv.range) + row('','');
+      return [[t('st_amp'), '+'+Math.round(lv.boost*100)+'%'], [t('st_range'), lv.range]];
     case 'poison':
-      return row(t('st_poison'), lv.dmg) +
-             row(t('st_rate'), lv.rate+t('sec_per')) +
-             row(t('st_range'), lv.range) +
-             (lv.acid ? row(t('st_pierce'), '-3 '+t('st_armor_short')) : row('',''));
+      return [[t('st_poison'), lv.dmg], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]]
+        .concat(lv.acid ? [[t('st_pierce'), '-3 '+t('st_armor_short')]] : []);
     case 'beam':
-      return row(t('st_dps'), Math.round(lv.dmg*metaVals().dmgMul)) +
-             row(t('st_ramp'), '+'+Math.round(lv.ramp*100)+'%'+t('sec_per')) +
-             row(t('st_range'), lv.range) + row('','');
+      return [[t('st_dps'), M], [t('st_ramp'), '+'+Math.round(lv.ramp*100)+'%'+t('sec_per')], [t('st_range'), lv.range]];
   }
-  return '';
+  return [];
+}
+function towerStatRows(kind, lv){
+  return statList(kind, lv).map(([l,v])=>'<span>'+l+'</span><b>'+v+'</b>').join('');
+}
+/* Сетка «текущее → следующее» для всех характеристик */
+function statDiffGrid(kind, lv, nl){
+  const a = statList(kind, lv), b = statList(kind, nl);
+  const rows = a.map(([l,v],i)=>{
+    const nv = b[i] ? b[i][1] : '—';
+    const changed = (''+nv) !== (''+v);
+    return '<div class="i-drow'+(changed?' ch':'')+'"><span>'+l+'</span><b>'+v+'</b><em>→</em><b'+(changed?' style="color:var(--lime)"':'')+'>'+nv+'</b></div>';
+  });
+  if (b.length > a.length) b.slice(a.length).forEach(([l,v])=>rows.push('<div class="i-drow ch"><span>'+l+'</span><b>—</b><em>→</em><b style="color:var(--lime)">'+v+'</b></div>'));
+  return '<div class="i-diff">'+rows.join('')+'</div>';
 }
 
 /* Достижения: проверка после значимых событий */
