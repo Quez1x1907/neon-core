@@ -1,0 +1,79 @@
+<canvas id="bgfx"></canvas>
+
+<!-- ГЛАВНОЕ МЕНЮ -->
+<section id="screen-menu" class="screen">
+  <canvas id="logo" width="200" height="200"></canvas>
+  <h1 class="title">NEON<span>CORE</span></h1>
+  <div class="tagline" data-i="tagline"></div>
+  <div class="menu-btns">
+    <button class="btn primary big" id="btn-play" data-i="play"></button>
+    <button class="btn big" id="btn-endless" data-i="menu_endless"></button>
+    <button class="btn big" id="btn-lab" data-i="lab"></button>
+    <button class="btn big" id="btn-ach" data-i="ach"></button>
+    <button class="btn ghost big" id="btn-settings" data-i="settings"></button>
+  </div>
+  <div class="menu-stats" id="menu-stats"></div>
+</section>
+
+<!-- ВЫБОР КАРТЫ -->
+<section id="screen-maps" class="screen">
+  <header class="topbar">
+    <button class="btn back" id="maps-back">←</button>
+    <h2 data-i="select_map"></h2>
+    <div class="chip cores" id="maps-stars"></div>
+  </header>
+  <div class="scroll-list"><div class="map-grid" id="map-grid"></div></div>
+</section>
+
+<!-- ЛАБОРАТОРИЯ (мета-прокачка) -->
+<section id="screen-lab" class="screen">
+  <header class="topbar">
+    <button class="btn back" id="lab-back">←</button>
+    <h2 data-i="lab"></h2>
+    <div class="chip cores" id="lab-cores"></div>
+  </header>
+  <div class="scroll-list"><div class="lab-list" id="lab-list"></div></div>
+</section>
+
+<!-- ДОСТИЖЕНИЯ -->
+<section id="screen-ach" class="screen">
+  <header class="topbar">
+    <button class="btn back" id="ach-back">←</button>
+    <h2 data-i="ach"></h2>
+    <div class="chip" id="ach-count"></div>
+  </header>
+  <div class="scroll-list"><div class="ach-grid" id="ach-grid"></div></div>
+</section>
+
+<!-- ИГРА -->
+<section id="screen-game" class="screen">
+  <div id="hud">
+    <div class="chip" id="hud-wave"></div>
+    <div class="chip money" id="hud-cash"></div>
+    <div class="chip lives" id="hud-lives"></div>
+    <div class="hud-spacer"></div>
+    <button class="hbtn ab" id="btn-ab-emp" title="Q"></button>
+    <button class="hbtn ab" id="btn-ab-over" title="E"></button>
+    <button class="hbtn" id="btn-speed" title="F">1×</button>
+    <button class="hbtn" id="btn-auto" title="R">A</button>
+    <button class="hbtn" id="btn-pause" title="Space"></button>
+    <button class="hbtn" id="btn-home" title="Esc"></button>
+  </div>
+  <div id="boardwrap">
+    <canvas id="board"></canvas>
+    <div id="bossbar"><div class="b-name" id="boss-name"></div><div class="b-track"><div class="b-fill" id="boss-fill"></div></div></div>
+    <div id="inspector" class="panel"></div>
+    <div id="nextwave" class="panel">
+      <button id="btn-wave" class="btn primary"></button>
+      <div id="wave-preview"></div>
+    </div>
+    <div id="wavebanner"><div class="banner-text" id="banner-text"></div><div class="banner-sub" id="banner-sub"></div></div>
+    <div id="hint" class="panel hint" hidden></div>
+  </div>
+  <div id="buildbar"></div>
+</section>
+
+<!-- МОДАЛЬНЫЕ ОКНА И ТОСТЫ -->
+<div id="tt" class="panel tt" hidden></div>
+<div id="overlay" class="overlay" hidden><div class="modal panel" id="modal"></div></div>
+<div id="toasts"></div>

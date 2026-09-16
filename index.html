@@ -110,7 +110,7 @@ h1,h2,h3{font-weight:600}
 .map-card .mc-row{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
 .map-card.locked{opacity:.55;cursor:default}
 .map-card.locked:hover{box-shadow:none}
-.mc-lock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(4,7,16,.78);border-radius:14px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim)}
+.mc-lock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(4,7,16,.72);border-radius:14px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim)}
 .mc-lock b{color:var(--amber);font-size:16px}
 .stars{display:flex;gap:3px}
 .stars svg{width:17px;height:17px;fill:rgba(111,138,168,.35)}
@@ -353,6 +353,8 @@ h1,h2,h3{font-weight:600}
   .tcard{width:72px;padding:8px 4px 7px}
   .tcard img{width:40px;height:40px}
   .tcard .tc-cost{font-size:13px}
+  #buildbar{gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+
   /* карты: 1 колонка на портретном телефоне, крупные карточки */
   .map-grid{grid-template-columns:1fr;gap:12px;max-width:440px}
   .map-card{padding:13px 14px;border-radius:14px}
@@ -397,6 +399,7 @@ h1,h2,h3{font-weight:600}
   <div class="tagline" data-i="tagline"></div>
   <div class="menu-btns">
     <button class="btn primary big" id="btn-play" data-i="play"></button>
+    <button class="btn big" id="btn-endless" data-i="menu_endless"></button>
     <button class="btn big" id="btn-lab" data-i="lab"></button>
     <button class="btn big" id="btn-ach" data-i="ach"></button>
     <button class="btn ghost big" id="btn-settings" data-i="settings"></button>
@@ -473,6 +476,8 @@ const I18N = {
 ru: {
   tagline:'tower defense · защити ядро от вирусов',
   play:'Играть', lab:'Лаборатория', ach:'Достижения', settings:'Настройки',
+  menu_endless:'Бесконечный режим', endless_title:'Бесконечный · рекорды',
+  endless_empty:'Пока пусто — победи хотя бы на одной карте, и её ∞-режим появится здесь',
   cores:'ядер данных',
   hello_tpl:'Привет, {n}',
   select_map:'Выбор карты', stars_total:'звёзд', need_stars:'Нужно {n}★',
@@ -580,6 +585,8 @@ ru: {
 en: {
   tagline:'tower defense · protect the core from viruses',
   play:'Play', lab:'Lab', ach:'Achievements', settings:'Settings',
+  menu_endless:'Endless mode', endless_title:'Endless · records',
+  endless_empty:'Nothing here yet — win at least one map and its ∞ mode shows up',
   cores:'data cores',
   hello_tpl:'Hi, {n}',
   select_map:'Select map', stars_total:'stars', need_stars:'Requires {n}★',
@@ -2870,19 +2877,31 @@ const UI = {
   },
 
   /* ---------- карты ---------- */
+  mapsMode: 'campaign', // campaign | endless
+  openEndless(){
+    this.mapsMode = 'endless';
+    this.showScreen('maps');
+  },
   renderMaps(){
     const grid = $('map-grid');
     grid.innerHTML = '';
     const ts = totalStars();
+    const endlessMode = this.mapsMode === 'endless';
     $('maps-stars').textContent = '★ '+ts+'/'+(MAPS.length*3);
+    document.querySelector('#screen-maps h2').textContent = endlessMode ? t('endless_title') : t('select_map');
+    let shownAny = false;
     MAPS.forEach((m,i)=>{
       const ms = mapSave(i);
-      const locked = ts < m.need;
+      const locked = endlessMode ? ms.stars < 1 : ts < m.need;
+      if (endlessMode && (locked || ms.stars < 1)) return;
+      shownAny = true;
       const card = document.createElement('div');
       card.className = 'map-card panel'+(locked ? ' locked' : '');
-      const starsHtml = [1,2,3].map(k=>ICONS.star.replace('<svg','<svg class="'+(ms.stars>=k?'on':'')+'"')).join('');
-      const endlessBtn = (!locked && ms.stars>=1)
+      const endlessBtn = (!endlessMode && !locked && ms.stars>=1)
         ? '<button class="btn" data-endless="'+i+'" style="padding:5px 10px;font-size:11px">∞</button>' : '';
+      const starsHtml = endlessMode
+        ? '<span class="chip" style="padding:2px 8px;font-size:11px;color:var(--lime);border-color:rgba(168,255,62,.4)">∞ '+(ms.best||1)+'</span>'
+        : [1,2,3].map(k=>ICONS.star.replace('<svg','<svg class="'+(ms.stars>=k?'on':'')+'"')).join('');
       card.innerHTML =
         '<canvas width="240" height="100"></canvas>'+
         '<div class="mc-name"><span>'+t(m.key)+'</span><em>'+t('diff')[i]+' ×'+m.mult+'</em></div>'+
@@ -2893,11 +2912,14 @@ const UI = {
       grid.appendChild(card);
       drawMapPreview(card.querySelector('canvas'), m);
       if (!locked){
-        card.addEventListener('click', ()=>{ AudioSys.play('click'); startGame(i,false); });
+        card.addEventListener('click', ()=>{ AudioSys.play('click'); startGame(i, endlessMode ? true : false); });
         const eb = card.querySelector('[data-endless]');
         if (eb) eb.addEventListener('click', (ev)=>{ ev.stopPropagation(); AudioSys.play('click'); startGame(i,true); });
       }
     });
+    if (endlessMode && !shownAny){
+      grid.innerHTML = '<div class="panel" style="padding:18px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--dim);grid-column:1/-1">'+t('endless_empty')+'</div>';
+    }
   },
 
   /* ---------- лаборатория ---------- */
@@ -3659,7 +3681,8 @@ function initInput(){
   UI.els.btnWave.addEventListener('click', ()=>{ AudioSys.resume(); startWave(); });
 
   // Экранные кнопки
-  $('btn-play').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.showScreen('maps'); });
+  $('btn-play').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.mapsMode = 'campaign'; UI.showScreen('maps'); });
+  $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
   $('btn-ach').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
   $('btn-settings').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
