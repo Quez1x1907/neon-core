@@ -159,6 +159,8 @@ function initInput(){
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
   $('btn-ach').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
+  $('btn-profile').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
+  $('profile-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('btn-settings').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
   $('maps-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('lab-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });

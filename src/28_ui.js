@@ -36,6 +36,7 @@ const UI = {
     if (name==='maps') this.renderMaps();
     if (name==='lab') this.renderLab();
     if (name==='ach') this.renderAch();
+    if (name==='profile') this.renderProfile();
 
   },
 
@@ -116,6 +117,25 @@ const UI = {
     if (endlessMode && !shownAny){
       grid.innerHTML = '<div class="panel" style="padding:18px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--dim);grid-column:1/-1">'+t('endless_empty')+'</div>';
     }
+  },
+
+  /* ---------- профиль ---------- */
+  renderProfile(){
+    const rows = [
+      [t('pr_games'), fmtNum(S.stats.games||0)],
+      [t('pr_wins'), fmtNum(S.stats.wins||0), true],
+      [t('pr_kills'), fmtNum(S.stats.kills)],
+      [t('pr_bosses'), fmtNum(S.stats.bosses)],
+      [t('pr_endless'), endlessBest()||'—', true],
+      [t('pr_stars'), totalStars()+'/'+(MAPS.length*3)],
+      [t('pr_ach'), ACHS.filter(a=>S.ach[a.id]).length+'/'+ACHS.length],
+      [t('pr_towers'), fmtNum(S.stats.towersBuilt)],
+      [t('pr_branches'), fmtNum(S.stats.branches||0)],
+      [t('pr_money'), '$'+fmtNum(S.stats.money)],
+    ];
+    $('profile-stars').textContent = '◆ '+fmtNum(S.cores);
+    $('profile-list').innerHTML = rows.map(([k,v,hi])=>
+      '<div class="stat-row"><span>'+k+'</span><b class="'+(hi?'hi':'')+'">'+v+'</b></div>').join('');
   },
 
   /* ---------- лаборатория ---------- */
@@ -529,6 +549,7 @@ const UI = {
     $('m-lang-en').addEventListener('click', ()=>{ setLang('en'); this.openSettings(); });
     $('m-gfx-hi').addEventListener('click', ()=>{ setLowGfx(false); this.openSettings(); });
     $('m-gfx-lo').addEventListener('click', ()=>{ setLowGfx(true); this.openSettings(); });
+    $('m-vol').addEventListener('input', (ev)=>{ setVolume(ev.target.value/100); });
     $('m-reset').addEventListener('click', ()=>this.confirmDlg(t('s_reset_c'), ()=>{
       resetSave(); LANG = 'ru'; applyStaticI18n(); this.showScreen('menu'); this.renderMenu();
     }));
@@ -706,6 +727,12 @@ function setSound(on){
   AudioSys.setMuted(!on);
   if (on) AudioSys.resume();
 }
+/* Громкость: 0..1 */
+function setVolume(v){
+  S.volume = clamp(v, 0, 1); persist();
+  AudioSys.setVolume(S.volume);
+}
+
 /* Низкая графика: DPR 1x, без глоу у врагов, вдвое меньше частиц */
 function setLowGfx(on){
   S.lowgfx = on; persist();

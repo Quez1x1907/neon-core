@@ -131,6 +131,14 @@ h1,h2,h3{font-weight:600}
 .track .t-buy{display:flex;flex-direction:column;align-items:center;gap:5px}
 .track .t-buy .btn{padding:8px 14px;font-size:12px}
 
+/* профиль */
+.stat-list{padding:8px 6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(0,229,255,.08);font-family:var(--mono);font-size:13px}
+.stat-row:last-child{border-bottom:none}
+.stat-row span{color:var(--dim)}
+.stat-row b{color:var(--text);font-weight:600}
+.stat-row b.hi{color:var(--lime);text-shadow:0 0 8px rgba(168,255,62,.4)}
+
 /* достижения */
 .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;max-width:1000px;margin:0 auto;width:100%}
 .ach-card{padding:13px 14px}
@@ -410,6 +418,7 @@ h1,h2,h3{font-weight:600}
     <button class="btn big" id="btn-endless" data-i="menu_endless"></button>
     <button class="btn big" id="btn-lab" data-i="lab"></button>
     <button class="btn big" id="btn-ach" data-i="ach"></button>
+    <button class="btn big" id="btn-profile" data-i="profile"></button>
     <button class="btn ghost big" id="btn-settings" data-i="settings"></button>
   </div>
   <div class="menu-stats" id="menu-stats"></div>
@@ -433,6 +442,16 @@ h1,h2,h3{font-weight:600}
     <div class="chip cores" id="lab-cores"></div>
   </header>
   <div class="scroll-list"><div class="lab-list" id="lab-list"></div></div>
+</section>
+
+<!-- ПРОФИЛЬ -->
+<section id="screen-profile" class="screen">
+  <header class="topbar">
+    <button class="btn back" id="profile-back">←</button>
+    <h2 data-i="profile"></h2>
+    <div class="chip cores" id="profile-stars"></div>
+  </header>
+  <div class="scroll-list"><div class="panel stat-list" id="profile-list" style="max-width:560px;margin:0 auto;width:100%"></div></div>
 </section>
 
 <!-- ДОСТИЖЕНИЯ -->
@@ -486,6 +505,11 @@ ru: {
   tagline:'tower defense · защити ядро от вирусов',
   play:'Играть', lab:'Лаборатория', ach:'Достижения', settings:'Настройки',
   menu_endless:'Бесконечный режим', endless_title:'Бесконечный · рекорды',
+  profile:'Профиль', pr_games:'Партий сыграно', pr_wins:'Побед',
+  pr_kills:'Уничтожено вирусов', pr_bosses:'Побеждено боссов', pr_endless:'∞ рекорд',
+  pr_stars:'Звёзды', pr_ach:'Достижения', pr_towers:'Построено башен',
+  pr_money:'Заработано данных', pr_branches:'Специализаций выбрано',
+  v_chain:'СЕКТОР ЗАЧИЩЕН', v_chain_next:'Переход на карту:', s_vol:'Громкость',
   endless_empty:'Пока пусто — победи хотя бы на одной карте, и её ∞-режим появится здесь',
   cores:'ядер данных',
   hello_tpl:'Привет, {n}',
@@ -599,6 +623,11 @@ en: {
   tagline:'tower defense · protect the core from viruses',
   play:'Play', lab:'Lab', ach:'Achievements', settings:'Settings',
   menu_endless:'Endless mode', endless_title:'Endless · records',
+  profile:'Profile', pr_games:'Games played', pr_wins:'Victories',
+  pr_kills:'Viruses destroyed', pr_bosses:'Bosses defeated', pr_endless:'∞ record',
+  pr_stars:'Stars', pr_ach:'Achievements', pr_towers:'Towers built',
+  pr_money:'Data earned', pr_branches:'Specializations picked',
+  v_chain:'SECTOR CLEARED', v_chain_next:'Moving to map:', s_vol:'Volume',
   endless_empty:'Nothing here yet — win at least one map and its ∞ mode shows up',
   cores:'data cores',
   hello_tpl:'Hi, {n}',
@@ -944,13 +973,13 @@ const ICONS = {
 let SAVE_KEY = 'neoncore_v1';
 function defSave(){
   return {
-    v:1, lang:null, sound:true, lowgfx:false, auto:false, cores:0, savedAt:0,
+    v:1, lang:null, sound:true, lowgfx:false, auto:false, volume:0.5, cores:0, savedAt:0,
     meta:{ dmg:0, lives:0, cash:0, income:0 },
     maps:{},            // idx → {stars, best, milestone}
     ach:{},             // id → 1
     seen:{},            // флаги "уже видел" (интро врагов, мутаций)
     tut:{},             // шаги обучения
-    stats:{ kills:0, money:0, bosses:0, towersBuilt:0, maxTowers:0, maxTowerLevel:1, bestCleanWave:0, branches:0, maxAmps:0 },
+    stats:{ kills:0, money:0, bosses:0, towersBuilt:0, maxTowers:0, maxTowerLevel:1, bestCleanWave:0, branches:0, maxAmps:0, games:0, wins:0 },
   };
 }
 const storageOK = (()=>{ try{ localStorage.setItem('__nc_t','1'); localStorage.removeItem('__nc_t'); return true; }catch(e){ return false; } })();
@@ -1004,7 +1033,7 @@ const AudioSys = {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = S.sound ? 0.5 : 0;
+      this.master.gain.value = S.sound ? (S.volume !== undefined ? S.volume : 0.5) : 0;
       this.master.connect(this.ctx.destination);
       const len = Math.floor(this.ctx.sampleRate*0.6);
       this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
@@ -1893,6 +1922,7 @@ function startGame(mapIdx, endless){
   G.abil = { emp:{cd:0}, over:{cd:0, active:0} };
   G.targeting = null; G.autoT = 0;
   G.coreCharge = 0; G.dmgByType = {};
+  S.stats.games = (S.stats.games||0) + 1;
   initPools();
   UI.bossHide();
   UI.renderInspector();
@@ -2353,6 +2383,7 @@ function waveClearInner(){
       UI.toast(t('t_core', { n:k*5 }));
     }
     persist(); checkAch();
+    if (G.wave % 20 === 0){ chainToNextMap(); return; }
     G.waveState = 'prep';
     G.nextWave = buildWave(G.mapIdx, G.wave+1, true);
   } else if (G.wave >= WAVES_PER_MAP){
@@ -2375,6 +2406,7 @@ function victory(){
     const lost = G.maxLives - G.lives;
     const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
     const firstWin = ms.stars === 0;
+    S.stats.wins = (S.stats.wins||0) + 1;
     const earned = (firstWin ? 8 + 2*G.mapIdx : 0) + Math.max(0, stars - ms.stars)*3;
     ms.stars = Math.max(ms.stars, stars);
     if (earned > 0) addCores(earned);
@@ -2454,6 +2486,32 @@ G.shake = function(amp){
   if (amp > G.shakeAmp) G.shakeAmp = amp;
   G.shakeT = 0.3;
 };
+
+/* Бесконечная цепочка: после каждых 20 волн забег переезжает на следующую карту.
+   Деньги, счёт волн и статистика сохраняются; ядро подлечивается наполовину. */
+function chainToNextMap(){
+  const nonArena = MAPS.map((m,i)=>i).filter(i=>!MAPS[i].endlessOnly);
+  const pos = nonArena.indexOf(G.mapIdx);
+  const next = nonArena[(pos+1) % nonArena.length];
+  G.mapIdx = next; G.map = MAPS[next];
+  G.endless = true;
+  computePaths(G.map);
+  initPools();
+  G.towers = []; G.towerGrid = new Map();
+  G.selected = null; G.placing = null; G.dragPlacing = null; G.targeting = null;
+  G.enemiesCount = 0; G.bossRef = null; UI.bossHide();
+  G.waveState = 'prep';
+  G.nextWave = buildWave(G.mapIdx, G.wave+1, true);
+  G.lives = Math.max(G.lives, Math.ceil(G.maxLives*0.5));
+  G.coreFlash = 0;
+  computeView();
+  UI.buildBuildbar();
+  UI.updateHUD(true);
+  UI.banner(t('v_chain'), false);
+  UI.toast(t('v_chain_next')+': '+t(G.map.key), 'warn');
+  AudioSys.play('wavestart');
+  persist();
+}
 
 /* Нова ядра: разряд накопленного заряда по всем вирусам на поле */
 function coreNova(){
@@ -3022,6 +3080,7 @@ const UI = {
     if (name==='maps') this.renderMaps();
     if (name==='lab') this.renderLab();
     if (name==='ach') this.renderAch();
+    if (name==='profile') this.renderProfile();
 
   },
 
@@ -3102,6 +3161,25 @@ const UI = {
     if (endlessMode && !shownAny){
       grid.innerHTML = '<div class="panel" style="padding:18px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--dim);grid-column:1/-1">'+t('endless_empty')+'</div>';
     }
+  },
+
+  /* ---------- профиль ---------- */
+  renderProfile(){
+    const rows = [
+      [t('pr_games'), fmtNum(S.stats.games||0)],
+      [t('pr_wins'), fmtNum(S.stats.wins||0), true],
+      [t('pr_kills'), fmtNum(S.stats.kills)],
+      [t('pr_bosses'), fmtNum(S.stats.bosses)],
+      [t('pr_endless'), endlessBest()||'—', true],
+      [t('pr_stars'), totalStars()+'/'+(MAPS.length*3)],
+      [t('pr_ach'), ACHS.filter(a=>S.ach[a.id]).length+'/'+ACHS.length],
+      [t('pr_towers'), fmtNum(S.stats.towersBuilt)],
+      [t('pr_branches'), fmtNum(S.stats.branches||0)],
+      [t('pr_money'), '$'+fmtNum(S.stats.money)],
+    ];
+    $('profile-stars').textContent = '◆ '+fmtNum(S.cores);
+    $('profile-list').innerHTML = rows.map(([k,v,hi])=>
+      '<div class="stat-row"><span>'+k+'</span><b class="'+(hi?'hi':'')+'">'+v+'</b></div>').join('');
   },
 
   /* ---------- лаборатория ---------- */
@@ -3515,6 +3593,7 @@ const UI = {
     $('m-lang-en').addEventListener('click', ()=>{ setLang('en'); this.openSettings(); });
     $('m-gfx-hi').addEventListener('click', ()=>{ setLowGfx(false); this.openSettings(); });
     $('m-gfx-lo').addEventListener('click', ()=>{ setLowGfx(true); this.openSettings(); });
+    $('m-vol').addEventListener('input', (ev)=>{ setVolume(ev.target.value/100); });
     $('m-reset').addEventListener('click', ()=>this.confirmDlg(t('s_reset_c'), ()=>{
       resetSave(); LANG = 'ru'; applyStaticI18n(); this.showScreen('menu'); this.renderMenu();
     }));
@@ -3692,6 +3771,12 @@ function setSound(on){
   AudioSys.setMuted(!on);
   if (on) AudioSys.resume();
 }
+/* Громкость: 0..1 */
+function setVolume(v){
+  S.volume = clamp(v, 0, 1); persist();
+  AudioSys.setVolume(S.volume);
+}
+
 /* Низкая графика: DPR 1x, без глоу у врагов, вдвое меньше частиц */
 function setLowGfx(on){
   S.lowgfx = on; persist();
@@ -3956,6 +4041,8 @@ function initInput(){
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
   $('btn-ach').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
+  $('btn-profile').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
+  $('profile-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('btn-settings').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
   $('maps-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('lab-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });

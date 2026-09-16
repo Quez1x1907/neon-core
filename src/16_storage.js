@@ -5,13 +5,13 @@
 let SAVE_KEY = 'neoncore_v1';
 function defSave(){
   return {
-    v:1, lang:null, sound:true, lowgfx:false, auto:false, cores:0, savedAt:0,
+    v:1, lang:null, sound:true, lowgfx:false, auto:false, volume:0.5, cores:0, savedAt:0,
     meta:{ dmg:0, lives:0, cash:0, income:0 },
     maps:{},            // idx → {stars, best, milestone}
     ach:{},             // id → 1
     seen:{},            // флаги "уже видел" (интро врагов, мутаций)
     tut:{},             // шаги обучения
-    stats:{ kills:0, money:0, bosses:0, towersBuilt:0, maxTowers:0, maxTowerLevel:1, bestCleanWave:0, branches:0, maxAmps:0 },
+    stats:{ kills:0, money:0, bosses:0, towersBuilt:0, maxTowers:0, maxTowerLevel:1, bestCleanWave:0, branches:0, maxAmps:0, games:0, wins:0 },
   };
 }
 const storageOK = (()=>{ try{ localStorage.setItem('__nc_t','1'); localStorage.removeItem('__nc_t'); return true; }catch(e){ return false; } })();

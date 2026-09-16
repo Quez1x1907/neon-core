@@ -8,7 +8,7 @@ const AudioSys = {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = S.sound ? 0.5 : 0;
+      this.master.gain.value = S.sound ? (S.volume !== undefined ? S.volume : 0.5) : 0;
       this.master.connect(this.ctx.destination);
       const len = Math.floor(this.ctx.sampleRate*0.6);
       this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);

@@ -121,6 +121,14 @@ h1,h2,h3{font-weight:600}
 .track .t-buy{display:flex;flex-direction:column;align-items:center;gap:5px}
 .track .t-buy .btn{padding:8px 14px;font-size:12px}
 
+/* профиль */
+.stat-list{padding:8px 6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(0,229,255,.08);font-family:var(--mono);font-size:13px}
+.stat-row:last-child{border-bottom:none}
+.stat-row span{color:var(--dim)}
+.stat-row b{color:var(--text);font-weight:600}
+.stat-row b.hi{color:var(--lime);text-shadow:0 0 8px rgba(168,255,62,.4)}
+
 /* достижения */
 .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;max-width:1000px;margin:0 auto;width:100%}
 .ach-card{padding:13px 14px}

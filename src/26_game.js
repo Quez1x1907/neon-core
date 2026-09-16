@@ -113,6 +113,7 @@ function startGame(mapIdx, endless){
   G.abil = { emp:{cd:0}, over:{cd:0, active:0} };
   G.targeting = null; G.autoT = 0;
   G.coreCharge = 0; G.dmgByType = {};
+  S.stats.games = (S.stats.games||0) + 1;
   initPools();
   UI.bossHide();
   UI.renderInspector();
@@ -573,6 +574,7 @@ function waveClearInner(){
       UI.toast(t('t_core', { n:k*5 }));
     }
     persist(); checkAch();
+    if (G.wave % 20 === 0){ chainToNextMap(); return; }
     G.waveState = 'prep';
     G.nextWave = buildWave(G.mapIdx, G.wave+1, true);
   } else if (G.wave >= WAVES_PER_MAP){
@@ -595,6 +597,7 @@ function victory(){
     const lost = G.maxLives - G.lives;
     const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
     const firstWin = ms.stars === 0;
+    S.stats.wins = (S.stats.wins||0) + 1;
     const earned = (firstWin ? 8 + 2*G.mapIdx : 0) + Math.max(0, stars - ms.stars)*3;
     ms.stars = Math.max(ms.stars, stars);
     if (earned > 0) addCores(earned);
@@ -674,6 +677,32 @@ G.shake = function(amp){
   if (amp > G.shakeAmp) G.shakeAmp = amp;
   G.shakeT = 0.3;
 };
+
+/* Бесконечная цепочка: после каждых 20 волн забег переезжает на следующую карту.
+   Деньги, счёт волн и статистика сохраняются; ядро подлечивается наполовину. */
+function chainToNextMap(){
+  const nonArena = MAPS.map((m,i)=>i).filter(i=>!MAPS[i].endlessOnly);
+  const pos = nonArena.indexOf(G.mapIdx);
+  const next = nonArena[(pos+1) % nonArena.length];
+  G.mapIdx = next; G.map = MAPS[next];
+  G.endless = true;
+  computePaths(G.map);
+  initPools();
+  G.towers = []; G.towerGrid = new Map();
+  G.selected = null; G.placing = null; G.dragPlacing = null; G.targeting = null;
+  G.enemiesCount = 0; G.bossRef = null; UI.bossHide();
+  G.waveState = 'prep';
+  G.nextWave = buildWave(G.mapIdx, G.wave+1, true);
+  G.lives = Math.max(G.lives, Math.ceil(G.maxLives*0.5));
+  G.coreFlash = 0;
+  computeView();
+  UI.buildBuildbar();
+  UI.updateHUD(true);
+  UI.banner(t('v_chain'), false);
+  UI.toast(t('v_chain_next')+': '+t(G.map.key), 'warn');
+  AudioSys.play('wavestart');
+  persist();
+}
 
 /* Нова ядра: разряд накопленного заряда по всем вирусам на поле */
 function coreNova(){
