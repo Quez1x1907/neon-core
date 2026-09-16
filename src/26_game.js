@@ -1195,6 +1195,7 @@ function renderGame(){
     drawPathFlow(ctx);
     drawPortals(ctx);
     drawCore(ctx);
+    drawBuildPads(ctx);
     drawEnemies(ctx);
     drawTowers(ctx);
     drawBulletsFx(ctx);

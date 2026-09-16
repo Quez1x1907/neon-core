@@ -298,6 +298,14 @@ h1,h2,h3{font-weight:600}
 .v-weapon i b{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--lime));border-radius:4px}
 .v-weapon em{font-style:normal;width:34px;text-align:right;color:var(--dim)}
 
+/* ---------- иконка переносимой башни ---------- */
+.dragicon{
+  position:fixed;z-index:55;width:46px;height:46px;pointer-events:none;
+  transform:translate(-50%,-75%);
+  filter:drop-shadow(0 0 10px rgba(0,229,255,.7));
+}
+.dragicon[hidden]{display:none}
+
 /* ---------- тултип башни ---------- */
 .tt{
   position:fixed;z-index:40;width:250px;padding:11px 13px;pointer-events:none;
@@ -466,6 +474,7 @@ h1,h2,h3{font-weight:600}
 </section>
 
 <!-- МОДАЛЬНЫЕ ОКНА И ТОСТЫ -->
+<img id="dragicon" class="dragicon" hidden alt="">
 <div id="tt" class="panel tt" hidden></div>
 <div id="overlay" class="overlay" hidden><div class="modal panel" id="modal"></div></div>
 <div id="toasts"></div>
@@ -2966,6 +2975,7 @@ function renderGame(){
     drawPathFlow(ctx);
     drawPortals(ctx);
     drawCore(ctx);
+    drawBuildPads(ctx);
     drawEnemies(ctx);
     drawTowers(ctx);
     drawBulletsFx(ctx);
@@ -2988,7 +2998,7 @@ const UI = {
       buildbar:$('buildbar'), inspector:$('inspector'), nextwave:$('nextwave'),
       btnWave:$('btn-wave'), wavePreview:$('wave-preview'), bannerText:$('banner-text'),
       bannerSub:$('banner-sub'), hint:$('hint'), bossbar:$('bossbar'),
-      bossName:$('boss-name'), bossFill:$('boss-fill'), tt:$('tt'),
+      bossName:$('boss-name'), bossFill:$('boss-fill'), tt:$('tt'), dragicon:$('dragicon'),
       abEmp:$('btn-ab-emp'), abOver:$('btn-ab-over'), btnAuto:$('btn-auto'),
     };
     this.els.btnPause.innerHTML = ICONS.pause;
@@ -3191,6 +3201,23 @@ const UI = {
     });
     this.syncBuildbar();
   },
+  /* иконка переносимой башни следует за пальцем/курсором */
+  showDragIcon(type, x, y){
+    const el = this.els.dragicon;
+    if (!el) return;
+    const src = towerIconURL(type);
+    if (el.getAttribute('src') !== src) el.setAttribute('src', src);
+    el.hidden = false;
+    el.style.left = x+'px';
+    el.style.top = y+'px';
+  },
+  hideDragIcon(){
+    if (this.els.dragicon) this.els.dragicon.hidden = true;
+  },
+  /* тултип не должен «висеть в воздухе», когда его кнопка пересоздана перерисовкой */
+  hideTipIfOrphaned(){
+    if (this.els.tt && !this.els.tt.hidden && this.tipAnchor && !document.contains(this.tipAnchor)) this.hideTip();
+  },
   /* ---------- тултип у элемента-якоря ---------- */
   showTipAt(html, anchorEl){
     const el = this.els.tt;
@@ -3323,6 +3350,7 @@ const UI = {
   /* ---------- инспектор башни ---------- */
   renderInspector(){
     const el = this.els.inspector;
+    this.hideTipIfOrphaned();
     this.hideTipIfOrphaned();
     const tw = G.selected;
     document.body.classList.toggle('ins-open', !!tw);
@@ -3876,7 +3904,10 @@ function initInput(){
       G.dragPlacing = cardDrag.type;
       UI.syncBuildbar(); UI.renderInspector();
     }
-    if (cardDrag.active) G.hoverCell = null;
+    if (cardDrag.active){
+      G.hoverCell = cellFromEvent(ev);           // призрак на поле следует за пальцем
+      UI.showDragIcon(cardDrag.type, ev.clientX, ev.clientY);  // иконка башни в руке
+    }
   });
   window.addEventListener('pointerup', (ev)=>{
     if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
@@ -3886,6 +3917,7 @@ function initInput(){
       UI.suppressCardClick = suppressedAt;
       const [c, r] = cellFromEvent(ev);
       const def = TOWERS[cd.type];
+      UI.hideDragIcon();
       if (canPlace(c, r) && G.cash >= def.cost){
         placeTower(cd.type, c, r);
         haptic('light');
@@ -3894,6 +3926,8 @@ function initInput(){
       }
       G.dragPlacing = null;
       UI.syncBuildbar();
+    } else {
+      UI.hideDragIcon();
     }
   });
   UI.els.abEmp.addEventListener('click', ()=>{

@@ -12,7 +12,7 @@ const UI = {
       buildbar:$('buildbar'), inspector:$('inspector'), nextwave:$('nextwave'),
       btnWave:$('btn-wave'), wavePreview:$('wave-preview'), bannerText:$('banner-text'),
       bannerSub:$('banner-sub'), hint:$('hint'), bossbar:$('bossbar'),
-      bossName:$('boss-name'), bossFill:$('boss-fill'), tt:$('tt'),
+      bossName:$('boss-name'), bossFill:$('boss-fill'), tt:$('tt'), dragicon:$('dragicon'),
       abEmp:$('btn-ab-emp'), abOver:$('btn-ab-over'), btnAuto:$('btn-auto'),
     };
     this.els.btnPause.innerHTML = ICONS.pause;
@@ -215,6 +215,23 @@ const UI = {
     });
     this.syncBuildbar();
   },
+  /* иконка переносимой башни следует за пальцем/курсором */
+  showDragIcon(type, x, y){
+    const el = this.els.dragicon;
+    if (!el) return;
+    const src = towerIconURL(type);
+    if (el.getAttribute('src') !== src) el.setAttribute('src', src);
+    el.hidden = false;
+    el.style.left = x+'px';
+    el.style.top = y+'px';
+  },
+  hideDragIcon(){
+    if (this.els.dragicon) this.els.dragicon.hidden = true;
+  },
+  /* тултип не должен «висеть в воздухе», когда его кнопка пересоздана перерисовкой */
+  hideTipIfOrphaned(){
+    if (this.els.tt && !this.els.tt.hidden && this.tipAnchor && !document.contains(this.tipAnchor)) this.hideTip();
+  },
   /* ---------- тултип у элемента-якоря ---------- */
   showTipAt(html, anchorEl){
     const el = this.els.tt;
@@ -347,6 +364,7 @@ const UI = {
   /* ---------- инспектор башни ---------- */
   renderInspector(){
     const el = this.els.inspector;
+    this.hideTipIfOrphaned();
     this.hideTipIfOrphaned();
     const tw = G.selected;
     document.body.classList.toggle('ins-open', !!tw);

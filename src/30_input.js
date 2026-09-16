@@ -107,7 +107,10 @@ function initInput(){
       G.dragPlacing = cardDrag.type;
       UI.syncBuildbar(); UI.renderInspector();
     }
-    if (cardDrag.active) G.hoverCell = null;
+    if (cardDrag.active){
+      G.hoverCell = cellFromEvent(ev);           // призрак на поле следует за пальцем
+      UI.showDragIcon(cardDrag.type, ev.clientX, ev.clientY);  // иконка башни в руке
+    }
   });
   window.addEventListener('pointerup', (ev)=>{
     if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
@@ -117,6 +120,7 @@ function initInput(){
       UI.suppressCardClick = suppressedAt;
       const [c, r] = cellFromEvent(ev);
       const def = TOWERS[cd.type];
+      UI.hideDragIcon();
       if (canPlace(c, r) && G.cash >= def.cost){
         placeTower(cd.type, c, r);
         haptic('light');
@@ -125,6 +129,8 @@ function initInput(){
       }
       G.dragPlacing = null;
       UI.syncBuildbar();
+    } else {
+      UI.hideDragIcon();
     }
   });
   UI.els.abEmp.addEventListener('click', ()=>{

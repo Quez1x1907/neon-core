@@ -288,6 +288,14 @@ h1,h2,h3{font-weight:600}
 .v-weapon i b{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--lime));border-radius:4px}
 .v-weapon em{font-style:normal;width:34px;text-align:right;color:var(--dim)}
 
+/* ---------- иконка переносимой башни ---------- */
+.dragicon{
+  position:fixed;z-index:55;width:46px;height:46px;pointer-events:none;
+  transform:translate(-50%,-75%);
+  filter:drop-shadow(0 0 10px rgba(0,229,255,.7));
+}
+.dragicon[hidden]{display:none}
+
 /* ---------- тултип башни ---------- */
 .tt{
   position:fixed;z-index:40;width:250px;padding:11px 13px;pointer-events:none;
