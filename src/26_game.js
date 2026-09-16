@@ -111,6 +111,7 @@ function startGame(mapIdx, endless){
   G.abil = { emp:{cd:0}, over:{cd:0, active:0} };
   G.targeting = null; G.autoT = 0;
   G.coreCharge = 0; G.dmgByType = {};
+  G.revives = 0;
   S.stats.games = (S.stats.games||0) + 1;
   initPools();
   UI.bossHide();
@@ -223,6 +224,7 @@ function fireHitscan(tw, e, def, lv, dmgMul){
   const x1 = V.ox+tw.x*V.cs, y1 = V.oy+tw.y*V.cs;
   const x2 = V.ox+e.x*V.cs, y2 = V.oy+e.y*V.cs;
   tracer(x1,y1,x2,y2, def.color, 0.09, def.kind==='sniper' ? 2.5 : 1.5);
+  if (S.fx && S.fx.plasma) tracer(x1,y1,x2,y2, '#eaffff', 0.14, 3.5);
   burst(x2,y2, def.color, def.kind==='sniper' ? 6 : 2, 90, 0.25);
   tw.aim = Math.atan2(e.y-tw.y, e.x-tw.x);
   damage(e, lv.dmg*dmgMul, def.kind==='sniper' ? lv.pierce : 0, false, tw.type);
@@ -295,6 +297,7 @@ function explode(b){
   const px = V.ox+b.x*V.cs, py = V.oy+b.y*V.cs;
   burst(px,py,'#ffb020', b.big ? 26 : 14, b.big ? 240 : 190, 0.45);
   ring(px,py,b.color, b.rad*V.cs*0.2, b.rad*V.cs, 0.3, b.big ? 3.5 : 2.5);
+  if (S.fx && S.fx.boom) ring(px,py,'#fff3c4', b.rad*V.cs*0.1, b.rad*V.cs*1.8, 0.45, 1.5);
   AudioSys.play('boom'); G.shake(b.big ? 7 : 3);
   const r2 = b.rad*b.rad;
   for (const e of EP){
@@ -596,7 +599,7 @@ function victory(){
     const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
     const firstWin = ms.stars === 0;
     S.stats.wins = (S.stats.wins||0) + 1;
-    const earned = (firstWin ? 8 + 2*G.mapIdx : 0) + Math.max(0, stars - ms.stars)*3;
+    const earned = (firstWin ? 8 + 2*G.mapIdx : 3) + Math.max(0, stars - ms.stars)*3;
     ms.stars = Math.max(ms.stars, stars);
     if (earned > 0) addCores(earned);
     // что разблокировалось
@@ -675,6 +678,17 @@ G.shake = function(amp){
   if (amp > G.shakeAmp) G.shakeAmp = amp;
   G.shakeT = 0.3;
 };
+
+/* Возрождение за ядра: продолжить текущую волну с частичным здоровьем */
+function reviveRun(){
+  G.state = 'play';
+  G.lives = Math.ceil(G.maxLives*0.6);
+  EP.forEach(e => { if (!e.boss){ e.alive = false; e.dead = true; } });
+  UI.closeModal();
+  UI.bossHide();
+  haptic('success');
+  AudioSys.play('ach');
+}
 
 /* Бесконечная цепочка: после каждых 20 волн забег переезжает на следующую карту.
    Деньги, счёт волн и статистика сохраняются; ядро подлечивается наполовину. */
@@ -819,11 +833,24 @@ function drawBGContent(c){
   }
 }
 
+/* Снегопад — косметический эффект (за ядра в магазине) */
+function drawSnow(ctx){
+  ctx.save();
+  ctx.fillStyle = 'rgba(225,242,255,0.75)';
+  for (let i=0;i<40;i++){
+    const sp = 14 + (i%7)*5;
+    const x = (i*173.3 + G.time*sp) % (V.w+20) - 10;
+    const y = (i*89.7 + G.time*(24+(i%5)*8)) % (V.h+20) - 10;
+    ctx.beginPath(); ctx.arc(x, y, 1 + (i%3)*0.8, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
 /* Площадки стройки рисуются статично в пререндере фона — ноль нагрузки в бою */
 
 function drawPathFlow(ctx){
   ctx.save();
-  ctx.strokeStyle = hexA(G.map.color, 0.55);
+  ctx.strokeStyle = (S.fx && S.fx.gold) ? 'rgba(255,215,106,0.65)' : hexA(G.map.color, 0.55);
   ctx.lineWidth = Math.max(2, V.cs*0.055);
   ctx.lineCap = 'round';
   ctx.setLineDash([V.cs*0.22, V.cs*0.38]);
@@ -1196,6 +1223,7 @@ function renderGame(){
     section(drawEnemies);
     section(drawTowers);
     section(drawBulletsFx);
+    section(()=>{ if (S.fx && S.fx.snow && !S.lowgfx) drawSnow(ctx); });
     section(drawGhostAndSelection);
   } finally {
     ctx.restore();

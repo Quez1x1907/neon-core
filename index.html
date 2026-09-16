@@ -131,6 +131,18 @@ h1,h2,h3{font-weight:600}
 .track .t-buy{display:flex;flex-direction:column;align-items:center;gap:5px}
 .track .t-buy .btn{padding:8px 14px;font-size:12px}
 
+/* магазин */
+.shop-h{font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,.5);margin:18px 2px 8px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:8px 0}
+.shop-item.sel{border-color:rgba(168,255,62,.5);box-shadow:0 0 16px rgba(168,255,62,.15)}
+.shop-item canvas{width:150px;height:44px;flex-shrink:0;background:rgba(3,6,14,.7);border-radius:8px}
+.si-main{flex:1;min-width:0}
+.si-name{font-family:var(--mono);font-size:12.5px;letter-spacing:.04em}
+.si-desc{font-size:11.5px;color:var(--dim);margin-top:2px}
+.si-have{font-family:var(--mono);font-size:11px;color:var(--lime);margin-top:2px}
+.si-price{font-family:var(--mono);font-size:13px;color:var(--lime);white-space:nowrap}
+.shop-item .btn{white-space:nowrap}
+
 /* профиль */
 .stat-list{padding:8px 6px}
 .stat-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(0,229,255,.08);font-family:var(--mono);font-size:13px}
@@ -416,6 +428,7 @@ h1,h2,h3{font-weight:600}
   <div class="menu-btns">
     <button class="btn primary big" id="btn-play" data-i="play"></button>
     <button class="btn big" id="btn-endless" data-i="menu_endless"></button>
+    <button class="btn big" id="btn-shop" data-i="shop"></button>
     <button class="btn big" id="btn-lab" data-i="lab"></button>
     <button class="btn big" id="btn-ach" data-i="ach"></button>
     <button class="btn big" id="btn-profile" data-i="profile"></button>
@@ -442,6 +455,16 @@ h1,h2,h3{font-weight:600}
     <div class="chip cores" id="lab-cores"></div>
   </header>
   <div class="scroll-list"><div class="lab-list" id="lab-list"></div></div>
+</section>
+
+<!-- МАГАЗИН -->
+<section id="screen-shop" class="screen">
+  <header class="topbar">
+    <button class="btn back" id="shop-back">←</button>
+    <h2 data-i="shop"></h2>
+    <div class="chip cores" id="shop-cores"></div>
+  </header>
+  <div class="scroll-list"><div id="shop-list" style="max-width:640px;margin:0 auto;width:100%"></div></div>
 </section>
 
 <!-- ПРОФИЛЬ -->
@@ -954,6 +977,8 @@ const ACHS = [
   { id:'stars21',   key:'a_stars21',   reward:25, test:()=>totalStars()>=MAPS.length*3,      prog:()=>[Math.min(totalStars(),MAPS.length*3),MAPS.length*3] },
   { id:'spec5',     key:'a_spec5',     reward:10, test:()=>S.stats.branches>=5,              prog:()=>[Math.min(S.stats.branches,5),5] },
   { id:'amp2',      key:'a_amp2',      reward:10, test:()=>S.stats.maxAmps>=2,               prog:()=>[Math.min(S.stats.maxAmps,2),2] },
+  { id:'shop5',     key:'a_shop',      reward:10, test:()=>(S.stats.purchases||0)>=5,        prog:()=>[Math.min(S.stats.purchases||0,5),5] },
+  { id:'shop5',     key:'a_shop',      reward:10, test:()=>(S.stats.purchases||0)>=5,        prog:()=>[Math.min(S.stats.purchases||0,5),5] },
 ];
 
 /* Иконки-стрелки/UI (inline SVG, без внешних файлов) */
@@ -976,12 +1001,14 @@ let SAVE_KEY = 'neoncore_v1';
 function defSave(){
   return {
     v:1, lang:null, sound:true, lowgfx:false, auto:false, volume:0.5, cores:0, savedAt:0,
+    skin:'classic', skins:{}, fx:{}, boosts:{dmg:0, lives:0, cash:0},
+    buyUnlocked:{}, lastCheckin:'', checkinDay:0,
     meta:{ dmg:0, lives:0, cash:0, income:0 },
     maps:{},            // idx → {stars, best, milestone}
     ach:{},             // id → 1
     seen:{},            // флаги "уже видел" (интро врагов, мутаций)
     tut:{},             // шаги обучения
-    stats:{ kills:0, money:0, bosses:0, towersBuilt:0, maxTowers:0, maxTowerLevel:1, bestCleanWave:0, branches:0, maxAmps:0, games:0, wins:0 },
+    stats:{ kills:0, money:0, bosses:0, towersBuilt:0, maxTowers:0, maxTowerLevel:1, bestCleanWave:0, branches:0, maxAmps:0, games:0, wins:0, purchases:0 },
   };
 }
 const storageOK = (()=>{ try{ localStorage.setItem('__nc_t','1'); localStorage.removeItem('__nc_t'); return true; }catch(e){ return false; } })();
@@ -1014,12 +1041,13 @@ function mapSave(i){ return S.maps[i] || (S.maps[i] = { stars:0, best:0, milesto
 function addCores(n){ S.cores += n; persist(); }
 function totalStars(){ let s=0; for(const k in S.maps) s += S.maps[k].stars||0; return s; }
 function endlessBest(){ let b=0; for(const k in S.maps) b = Math.max(b, S.maps[k].best||0); return b; }
-function unlockedTowerCount(){ return TOWER_ORDER.filter(tp=>totalStars()>=UNLOCK_STARS[tp]).length; }
+function towerUnlocked(tp){ return !!S.buyUnlocked[tp] || totalStars() >= UNLOCK_STARS[tp]; }
+function unlockedTowerCount(){ return TOWER_ORDER.filter(towerUnlocked).length; }
 
 /* Итоговые (с учётом мета-прокачки) параметры новой партии */
 function metaVals(){
   return {
-    dmgMul: 1 + 0.06*S.meta.dmg,
+    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
     lives: START_LIVES + 2*S.meta.lives,
     cash: START_CASH + 30*S.meta.cash,
     rewardMul: 1 + 0.06*S.meta.income,
@@ -1045,6 +1073,7 @@ const AudioSys = {
   },
   resume(){ this.init(); if (this.ctx && this.ctx.state==='suspended') this.ctx.resume(); },
   setMuted(m){ if (this.master) this.master.gain.value = m ? 0 : 0.5; },
+  setVolume(v){ if (this.master && S.sound) this.master.gain.value = v; },
   tone(freq, dur, type, vol, slideTo, delay){
     if (!this.ctx) return;
     const t0 = this.ctx.currentTime + (delay||0);
@@ -1376,18 +1405,53 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
 }
 
 /* ---- Башни: восьмиугольная платформа + глиф типа + пипсы уровня ---- */
+let SKIN_OVERRIDE = null; // превью скинов в магазине
+function skinOf(){ return SKIN_OVERRIDE || S.skin || 'classic'; }
+function towerSkin(base){
+  const sk = skinOf();
+  if (sk === 'chrome') return { main:'#d7dee8', hi:'#ffffff' };
+  if (sk === 'neon')   return { main:'#ff4df0', hi:'#ffd9f6' };
+  if (sk === 'toxic')  return { main:'#a4ff1e', hi:'#eaffc4' };
+  return { main: base, hi: '#ffffff' };
+}
+
 function drawTowerAt(ctx, type, lvl, px, py, cs, aim, color){
   const R = cs*0.36;
+  const skc = towerSkin(color);
   // платформа
   ctx.save(); ctx.translate(px,py);
   ctx.beginPath();
   for (let i=0;i<8;i++){ const a=i*TAU/8+TAU/16; i?ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R):ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R); }
   ctx.closePath();
   ctx.fillStyle = 'rgba(8,14,30,.9)'; ctx.fill();
-  ctx.strokeStyle = hexA(color,0.55); ctx.lineWidth = Math.max(1,cs*0.045); ctx.stroke();
-  // глиф
-  ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.2, cs*0.055); ctx.lineCap = 'round';
+  ctx.strokeStyle = hexA(skc.main,0.6); ctx.lineWidth = Math.max(1,cs*0.045); ctx.stroke();
+  if (skinOf() !== 'classic'){ // кольцо-блик платформы на скинах
+    ctx.strokeStyle = hexA(skc.hi,0.35); ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i=0;i<8;i++){ const a=i*TAU/8+TAU/16; i?ctx.lineTo(Math.cos(a)*R*0.72,Math.sin(a)*R*0.72):ctx.moveTo(Math.cos(a)*R*0.72,Math.sin(a)*R*0.72); }
+    ctx.closePath(); ctx.stroke();
+  }
+  // глиф: основной штрих + детализированный тонкий повтор на скинах
+  ctx.lineCap = 'round';
   const g = R*0.55;
+  if (skinOf() === 'classic'){
+    paintGlyph(ctx, type, g, aim, cs, color, Math.max(1.2, cs*0.055));
+  } else {
+    paintGlyph(ctx, type, g, aim, cs, skc.main, Math.max(1.4, cs*0.06));
+    paintGlyph(ctx, type, g, aim, cs, skc.hi, Math.max(0.8, cs*0.022));
+  }
+  // пипсы уровня
+  ctx.restore();
+  if (lvl > 1){
+    ctx.fillStyle = skc.main;
+    for (let i=0;i<lvl;i++) ctx.fillRect(px-cs*0.16+i*cs*0.16, py+R+cs*0.06, cs*0.1, cs*0.05);
+  }
+}
+
+/* Глиф башни: цвет и толщина задаются вызывающим */
+function paintGlyph(ctx, type, g, aim, cs, color, lw){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath();
   switch(TOWERS[type].kind){
     case 'gun':
@@ -1443,12 +1507,69 @@ function drawTowerAt(ctx, type, lvl, px, py, cs, aim, color){
       ctx.beginPath(); ctx.arc(g*0.1, 0, g*0.16, 0, TAU); ctx.stroke();
       break;
   }
-  // пипсы уровня
   ctx.restore();
-  if (lvl > 1){
-    ctx.fillStyle = color;
-    for (let i=0;i<lvl;i++) ctx.fillRect(px-cs*0.16+i*cs*0.16, py+R+cs*0.06, cs*0.1, cs*0.05);
+}
+
+/* Глиф башни: цвет и толщина задаются вызывающим */
+function paintGlyph(ctx, type, g, aim, cs, color, lw){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round';
+  ctx.beginPath();
+  switch(TOWERS[type].kind){
+    case 'gun':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.moveTo(-g*0.5,0); ctx.lineTo(g,0); ctx.moveTo(-g*0.5,-g*0.45); ctx.lineTo(-g*0.5,g*0.45);
+      ctx.stroke(); ctx.restore(); break;
+    case 'cryo':
+      for (let i=0;i<3;i++){ const a=i*TAU/3+(aim||0); ctx.moveTo(Math.cos(a)*g*0.3,Math.sin(a)*g*0.3); ctx.lineTo(Math.cos(a)*g,Math.sin(a)*g); }
+      ctx.stroke(); break;
+    case 'missile':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.moveTo(-g*0.4,-g*0.5); ctx.lineTo(g*0.8,0); ctx.lineTo(-g*0.4,g*0.5); ctx.closePath(); ctx.stroke();
+      ctx.restore(); break;
+    case 'tesla':
+      ctx.moveTo(-g,0); ctx.lineTo(-g*0.2,0); ctx.lineTo(-g*0.35,-g*0.5); ctx.lineTo(g*0.4,g*0.05);
+      ctx.lineTo(g*0.25,-g*0.45); ctx.lineTo(g,0.01);
+      ctx.stroke(); break;
+    case 'sniper':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.moveTo(-g*0.6,0); ctx.lineTo(g,0);
+      ctx.moveTo(g*0.15,-g*0.35); ctx.lineTo(g*0.15,g*0.35);
+      ctx.stroke(); ctx.restore(); break;
+    case 'bank':
+      ctx.moveTo(-g,g*0.7); ctx.lineTo(-g,-g*0.4); ctx.lineTo(0,-g); ctx.lineTo(g,-g*0.4); ctx.lineTo(g,g*0.7);
+      ctx.moveTo(-g*0.45,g*0.7); ctx.lineTo(-g*0.45,-g*0.1); ctx.moveTo(0,g*0.7); ctx.lineTo(0,-g*0.1); ctx.moveTo(g*0.45,g*0.7); ctx.lineTo(g*0.45,-g*0.1);
+      ctx.stroke(); break;
+    case 'beam':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.rect(-g*0.7,-g*0.4,g*0.9,g*0.8); ctx.stroke();
+      ctx.moveTo(g*0.2,0); ctx.lineTo(g,0); ctx.stroke();
+      ctx.restore(); break;
+    case 'poison': // колба с пузырьками
+      ctx.beginPath(); ctx.arc(0, g*0.35, g*0.55, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-g*0.28, g*0.35-g*0.5); ctx.lineTo(g*0.28, g*0.35-g*0.5);
+      ctx.moveTo(-g*0.22, g*0.35-g*0.5); ctx.lineTo(-g*0.22, g*0.35-g*0.15);
+      ctx.moveTo(g*0.22, g*0.35-g*0.5); ctx.lineTo(g*0.22, g*0.35-g*0.15);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(-g*0.12, g*0.42, g*0.12, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g*0.16, g*0.55, g*0.08, 0, TAU); ctx.stroke();
+      break;
+    case 'mortar': // мортира: короткий толстый ствол под углом вверх
+      ctx.save(); ctx.rotate((aim||0) - 0.9);
+      ctx.lineWidth = Math.max(2.5, cs*0.08);
+      ctx.beginPath(); ctx.moveTo(-g*0.2, 0); ctx.lineTo(g, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g, 0, g*0.28, 0, TAU); ctx.stroke();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(-g*0.25, g*0.25, g*0.3, 0, TAU); ctx.stroke();
+      break;
+    case 'amp': // излучатель: концентрические дуги
+      ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.4, -TAU/4, TAU/4); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.85, -TAU/4, TAU/4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-g*0.7, 0); ctx.lineTo(g*0.1, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g*0.1, 0, g*0.16, 0, TAU); ctx.stroke();
+      break;
   }
+  ctx.restore();
 }
 
 /* Иконки для DOM-карточек (data URL, рисуются один раз) */
@@ -1603,7 +1724,7 @@ function zapFx(pts, color){
    иначе первые волны непомерно жёсткие. */
 function hpMulFor(wave, mult){
   const warm = 0.55 + 0.45*Math.min(wave,10)/10;
-  return (1 + (mult-1)*warm) * Math.pow(1.115, wave-1) * (1 + 0.03*wave);
+  return (1 + (mult-1)*warm) * Math.pow(1.128, wave-1) * (1 + 0.03*wave);
 }
 /* Награда с учётом карты и мета-прокачки. Экономика строже: множитель 0.7,
    а после 10-й волны награда затухает (−4% за волну) — иначе к концу копится мешок денег */
@@ -1774,7 +1895,7 @@ function buildWave(mapIdx, wave, endless){
     return { groups, bossWave:true, mod:null };
   }
 
-  let budget = (7 + wave*3.3 + wave*wave*0.10) * (0.9 + 0.1*map.mult);
+  let budget = (7 + wave*3.4 + wave*wave*0.115) * (0.9 + 0.1*map.mult);
   if (mod === 'gold') budget *= 1.3; // золотая волна плотнее — но и награда ×2.5
   let delay = 0.4, avoid = null, mutUsed = false;
   let guard = 0;
@@ -1934,6 +2055,7 @@ function startGame(mapIdx, endless){
   G.abil = { emp:{cd:0}, over:{cd:0, active:0} };
   G.targeting = null; G.autoT = 0;
   G.coreCharge = 0; G.dmgByType = {};
+  G.revives = 0;
   S.stats.games = (S.stats.games||0) + 1;
   initPools();
   UI.bossHide();
@@ -2046,6 +2168,7 @@ function fireHitscan(tw, e, def, lv, dmgMul){
   const x1 = V.ox+tw.x*V.cs, y1 = V.oy+tw.y*V.cs;
   const x2 = V.ox+e.x*V.cs, y2 = V.oy+e.y*V.cs;
   tracer(x1,y1,x2,y2, def.color, 0.09, def.kind==='sniper' ? 2.5 : 1.5);
+  if (S.fx && S.fx.plasma) tracer(x1,y1,x2,y2, '#eaffff', 0.14, 3.5);
   burst(x2,y2, def.color, def.kind==='sniper' ? 6 : 2, 90, 0.25);
   tw.aim = Math.atan2(e.y-tw.y, e.x-tw.x);
   damage(e, lv.dmg*dmgMul, def.kind==='sniper' ? lv.pierce : 0, false, tw.type);
@@ -2118,6 +2241,7 @@ function explode(b){
   const px = V.ox+b.x*V.cs, py = V.oy+b.y*V.cs;
   burst(px,py,'#ffb020', b.big ? 26 : 14, b.big ? 240 : 190, 0.45);
   ring(px,py,b.color, b.rad*V.cs*0.2, b.rad*V.cs, 0.3, b.big ? 3.5 : 2.5);
+  if (S.fx && S.fx.boom) ring(px,py,'#fff3c4', b.rad*V.cs*0.1, b.rad*V.cs*1.8, 0.45, 1.5);
   AudioSys.play('boom'); G.shake(b.big ? 7 : 3);
   const r2 = b.rad*b.rad;
   for (const e of EP){
@@ -2419,7 +2543,7 @@ function victory(){
     const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
     const firstWin = ms.stars === 0;
     S.stats.wins = (S.stats.wins||0) + 1;
-    const earned = (firstWin ? 8 + 2*G.mapIdx : 0) + Math.max(0, stars - ms.stars)*3;
+    const earned = (firstWin ? 8 + 2*G.mapIdx : 3) + Math.max(0, stars - ms.stars)*3;
     ms.stars = Math.max(ms.stars, stars);
     if (earned > 0) addCores(earned);
     // что разблокировалось
@@ -2498,6 +2622,17 @@ G.shake = function(amp){
   if (amp > G.shakeAmp) G.shakeAmp = amp;
   G.shakeT = 0.3;
 };
+
+/* Возрождение за ядра: продолжить текущую волну с частичным здоровьем */
+function reviveRun(){
+  G.state = 'play';
+  G.lives = Math.ceil(G.maxLives*0.6);
+  EP.forEach(e => { if (!e.boss){ e.alive = false; e.dead = true; } });
+  UI.closeModal();
+  UI.bossHide();
+  haptic('success');
+  AudioSys.play('ach');
+}
 
 /* Бесконечная цепочка: после каждых 20 волн забег переезжает на следующую карту.
    Деньги, счёт волн и статистика сохраняются; ядро подлечивается наполовину. */
@@ -2642,11 +2777,24 @@ function drawBGContent(c){
   }
 }
 
+/* Снегопад — косметический эффект (за ядра в магазине) */
+function drawSnow(ctx){
+  ctx.save();
+  ctx.fillStyle = 'rgba(225,242,255,0.75)';
+  for (let i=0;i<40;i++){
+    const sp = 14 + (i%7)*5;
+    const x = (i*173.3 + G.time*sp) % (V.w+20) - 10;
+    const y = (i*89.7 + G.time*(24+(i%5)*8)) % (V.h+20) - 10;
+    ctx.beginPath(); ctx.arc(x, y, 1 + (i%3)*0.8, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+
 /* Площадки стройки рисуются статично в пререндере фона — ноль нагрузки в бою */
 
 function drawPathFlow(ctx){
   ctx.save();
-  ctx.strokeStyle = hexA(G.map.color, 0.55);
+  ctx.strokeStyle = (S.fx && S.fx.gold) ? 'rgba(255,215,106,0.65)' : hexA(G.map.color, 0.55);
   ctx.lineWidth = Math.max(2, V.cs*0.055);
   ctx.lineCap = 'round';
   ctx.setLineDash([V.cs*0.22, V.cs*0.38]);
@@ -3019,6 +3167,7 @@ function renderGame(){
     section(drawEnemies);
     section(drawTowers);
     section(drawBulletsFx);
+    section(()=>{ if (S.fx && S.fx.snow && !S.lowgfx) drawSnow(ctx); });
     section(drawGhostAndSelection);
   } finally {
     ctx.restore();
@@ -3065,6 +3214,7 @@ const UI = {
     if (name==='lab') this.renderLab();
     if (name==='ach') this.renderAch();
     if (name==='profile') this.renderProfile();
+    if (name==='shop') this.renderShop();
 
   },
 
@@ -3164,6 +3314,52 @@ const UI = {
     $('profile-stars').textContent = '◆ '+fmtNum(S.cores);
     $('profile-list').innerHTML = rows.map(([k,v,hi])=>
       '<div class="stat-row"><span>'+k+'</span><b class="'+(hi?'hi':'')+'">'+v+'</b></div>').join('');
+  },
+
+  /* ---------- магазин ---------- */
+  renderShop(){
+    this.hideTip();
+    $('shop-cores').textContent = '◆ '+fmtNum(S.cores);
+    const list = $('shop-list');
+    let html = '<h3 class="shop-h">'+t('shop_boosts')+'</h3>';
+    BOOSTS.forEach(b=>{
+      const owned = S.boosts[b.id]||0;
+      html += '<div class="shop-item panel"><div class="si-main"><div class="si-name">'+t(b.key)+'</div><div class="si-desc">'+t(b.dkey)+'</div><div class="si-have">'+t('owned')+': '+owned+'</div></div><button class="btn primary" data-buyboost="'+b.id+'">◆'+b.price+'</button></div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_skins')+'</h3>';
+    SKINS.forEach(sk=>{
+      const owned = sk.id==='classic' || !!S.skins[sk.id];
+      const active = (S.skin||'classic')===sk.id;
+      html += '<div class="shop-item panel'+(active?' sel':'')+'"><canvas width="150" height="44" data-skinprev="'+sk.id+'"></canvas><div class="si-main"><div class="si-name">'+t(sk.key)+'</div></div>'+
+        (owned ? (active ? '<span class="chip">✓</span>' : '<button class="btn" data-setskin="'+sk.id+'">'+t('apply')+'</button>') : '<button class="btn primary" data-buyskin="'+sk.id+'" style="white-space:nowrap">◆'+sk.price+'</button>')+'</div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_fx')+'</h3>';
+    FXS.forEach(f=>{
+      const owned = !!S.fx[f.id];
+      const on = S.fx[f.id] === 2;
+      html += '<div class="shop-item panel"><div class="si-main"><div class="si-name">'+t(f.key)+'</div></div>'+
+        (owned
+          ? '<button class="btn'+(on?' primary':'')+'" data-fx="'+f.id+'">'+(on?'ВКЛ':'ВЫКЛ')+'</button>'
+          : '<button class="btn primary" data-buyfx="'+f.id+'">◆'+f.price+'</button>')+'</div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_towers')+'</h3>';
+    const lockedTowers = TOWER_ORDER.filter(tp=>UNLOCK_STARS[tp]>0 && !towerUnlocked(tp));
+    html += lockedTowers.length
+      ? lockedTowers.map(tp=>{
+          const def = TOWERS[tp];
+          const price = 20 + UNLOCK_STARS[tp]*5;
+          return '<div class="shop-item panel"><div class="si-main"><div class="si-name" style="color:'+def.color+'">'+t(def.key)+'</div><div class="si-desc">'+t(def.key+'_d')+'</div></div><button class="btn primary" data-buytower="'+tp+'">◆'+price+'</button></div>';
+        }).join('')
+      : '<div class="si-desc" style="padding:6px 2px;font-family:var(--mono);font-size:12px">'+t('shop_all')+'</div>';
+    list.innerHTML = html;
+    list.querySelectorAll('[data-skinprev]').forEach(cv=>{
+      const sk = cv.getAttribute('data-skinprev');
+      const cc = cv.getContext('2d');
+      cc.clearRect(0,0,150,44);
+      SKIN_OVERRIDE = sk;
+      ['pulse','cryo','tesla'].forEach((tp,i)=>drawTowerAt(cc, tp, 1, 32+i*46, 22, 40, -TAU/8, TOWERS[tp].color));
+      SKIN_OVERRIDE = null;
+    });
   },
 
   /* ---------- лаборатория ---------- */
@@ -3649,14 +3845,23 @@ const UI = {
   },
   openDefeat(){
     this.lastEnd = { type:'lost' };
+    const rcost = 20 * Math.pow(2, G.revives||0);
+    const canRev = S.cores >= rcost;
     this.modal(
       '<h3 class="pink">'+t('d_title')+'</h3>'+
       '<div class="m-text">'+t('d_wave', { n:Math.max(1,G.wave) })+'</div>'+
       '<div class="m-btns">'+
+      (canRev ? '<button class="btn primary big" id="d-revive">'+t('d_revive')+' ◆'+rcost+'</button>' : '')+
       '<button class="btn primary big" id="d-retry">'+t('d_retry')+'</button>'+
       '<button class="btn big" id="d-maps">'+t('d_maps')+'</button></div>',
       true
     );
+    const rv = document.getElementById('d-revive');
+    if (rv) rv.addEventListener('click', ()=>{
+      if (S.cores < rcost){ AudioSys.play('error'); return; }
+      S.cores -= rcost; G.revives = (G.revives||0)+1; persist();
+      reviveRun();
+    });
     $('d-retry').addEventListener('click', ()=>{ this.closeModal(); startGame(G.mapIdx, G.endless); });
     $('d-maps').addEventListener('click', ()=>{ this.closeModal(); exitGame(); });
   },
@@ -3673,6 +3878,25 @@ const UI = {
 };
 
 /* Характеристики башни строками — общие для инспектора и тултипа */
+/* ---- Товары магазина ---- */
+const BOOSTS = [
+  { id:'dmg',   key:'sh_dmg',   dkey:'sh_dmg_d',   price:15 },
+  { id:'lives', key:'sh_lives', dkey:'sh_lives_d', price:12 },
+  { id:'cash',  key:'sh_cash',  dkey:'sh_cash_d',  price:14 },
+];
+const SKINS = [
+  { id:'classic', key:'sk_classic', price:0 },
+  { id:'chrome',  key:'sk_chrome',  price:40 },
+  { id:'neon',    key:'sk_neon',    price:50 },
+  { id:'toxic',   key:'sk_toxic',   price:45 },
+];
+const FXS = [
+  { id:'gold',   key:'fx_gold',   price:30 },
+  { id:'plasma', key:'fx_plasma', price:35 },
+  { id:'snow',   key:'fx_snow',   price:25 },
+  { id:'boom',   key:'fx_boom',   price:30 },
+];
+
 /* Последние ошибки с этого устройства — для отчёта разработчику */
 function lastErrHtml(){
   let arr = [];
@@ -4032,6 +4256,38 @@ function initInput(){
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
   $('btn-ach').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
+  $('btn-shop').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('shop'); });
+  $('shop-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
+  // покупки в магазине (делегирование — список перерисовывается)
+  $('shop-list').addEventListener('click', (ev)=>{
+    const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower]');
+    if (!b) return;
+    const buy = (price)=>{
+      if (S.cores < price){ AudioSys.play('error'); return false; }
+      S.cores -= price;
+      S.stats.purchases = (S.stats.purchases||0)+1;
+      return true;
+    };
+    if (b.dataset.buyboost){
+      const def = BOOSTS.find(x=>x.id===b.dataset.buyboost);
+      if (buy(def.price)){ S.boosts[def.id] = (S.boosts[def.id]||0)+1; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.buyskin){
+      const def = SKINS.find(x=>x.id===b.dataset.buyskin);
+      if (buy(def.price)){ S.skins[def.id] = 1; S.skin = def.id; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.setskin){
+      S.skin = b.dataset.setskin; persist(); AudioSys.play('click');
+    } else if (b.dataset.buyfx){
+      const def = FXS.find(x=>x.id===b.dataset.buyfx);
+      if (buy(def.price)){ S.fx[def.id] = 2; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.fx){
+      S.fx[b.dataset.fx] = (S.fx[b.dataset.fx] === 2) ? 1 : 2; persist(); AudioSys.play('click');
+    } else if (b.dataset.buytower){
+      const tp = b.dataset.buytower;
+      const price = 20 + UNLOCK_STARS[tp]*5;
+      if (buy(price)){ S.buyUnlocked[tp] = 1; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    }
+    UI.renderShop();
+  });
   $('btn-profile').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
   $('profile-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('btn-settings').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
@@ -4212,6 +4468,19 @@ async function boot(){
   initTelegram();                 // SDK Telegram (в обычном браузере — no-op)
   S = loadSaveFrom(SAVE_KEY);     // ключ мог смениться на пользовательский (по ID игрока)
   try{ await loadCloudSave(); }catch(e){}  // облачный сейв новее локального — берём его
+  // ежедневный вход: ядра за каждый новый день, стрик растёт до +50
+  try{
+    const today = new Date().toDateString();
+    const yest = new Date(Date.now()-86400000).toDateString();
+    if (S.lastCheckin !== today){
+      S.checkinDay = (S.lastCheckin === yest) ? (S.checkinDay||0)+1 : 1;
+      const reward = Math.min(10 + (S.checkinDay-1)*5, 50);
+      S.lastCheckin = today;
+      addCores(reward);
+      setTimeout(()=>{ try{ UI.toast(t('checkin', { n:reward, d:S.checkinDay }), 'ach'); AudioSys.play('ach'); }catch(e){} }, 900);
+      persist();
+    }
+  }catch(e){}
   LANG = S.lang || ((navigator.language||'').toLowerCase().startsWith('ru') ? 'ru' : 'en');
   document.documentElement.lang = LANG;
   applyStaticI18n();
