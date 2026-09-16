@@ -1824,7 +1824,6 @@ function waveEvents(w, nPaths){
 /* ==================== ИГРА: состояние, обновление, рендер ==================== */
 
 const V = { cs:40, ox:0, oy:0, w:0, h:0, dpr:1 };
-let boardBG = null;
 const boardCv = $('board');
 const bctx = boardCv.getContext('2d');
 
@@ -1907,7 +1906,6 @@ function computeView(){
   if (bh <= h) V.oy = (h - bh) > V.cs*2 ? 2 : (h - bh)/2; // портрет: поле прижато к HUD
   clampCam(C, R);
   computePathPxs();
-  renderBoardBG();
   renderGame(); // ресайз мог случиться на паузе — кадр должен остаться актуальным
 }
 /* Камера не даёт показать пустоту за пределами поля */
@@ -2584,27 +2582,15 @@ function strokePoly(c, pts){
   c.stroke();
 }
 
-function renderBoardBG(){
-  if (!G.active || !G.map || !V.w) return;
-  const BL = 24; // запас под тряску, рисуется 1:1 — сетка не растягивается
-  boardBG = document.createElement('canvas');
-  boardBG.width = Math.max(1, Math.round((V.w+BL*2)*V.dpr));
-  boardBG.height = Math.max(1, Math.round((V.h+BL*2)*V.dpr));
-  const c = boardBG.getContext('2d');
-  c.scale(V.dpr, V.dpr);
-  c.translate(BL, BL);
-  V.w += BL*2; V.h += BL*2;      // рисуем расширенный фон
-  drawBGContent(c);
-  V.w -= BL*2; V.h -= BL*2;      // возвращаем рабочие размеры
-}
-
+/* Фон рисуется напрямую каждый кадр — непрозрачная заливка идёт ПЕРВОЙ,
+   поэтому наслоение кадров физически невозможно (класс багов «вееров» убран).
+   Стоимость ~300 простых операций — приемлемо даже для слабых телефонов. */
 function drawBGContent(c){
-  const Vw = V.w + 48, Vh = V.h + 48; // покрытие с запасом за края экрана
-  {
+  const BL = 24; // запас под тряску
   // фон
-  const g = c.createLinearGradient(0,0,V.w,V.h);
+  const g = c.createLinearGradient(-BL,-BL, V.w+BL, V.h+BL);
   g.addColorStop(0,'#070b18'); g.addColorStop(0.5,'#05070f'); g.addColorStop(1,'#0a0f22');
-  c.fillStyle = g; c.fillRect(0,0,V.w,V.h);
+  c.fillStyle = g; c.fillRect(-BL,-BL, V.w+BL*2, V.h+BL*2);
   // сетка
   c.strokeStyle = 'rgba(0,229,255,0.05)'; c.lineWidth = 1;
   for (let i=0;i<=G.cols;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+G.rows*V.cs); c.stroke(); }
@@ -2645,15 +2631,14 @@ function drawBGContent(c){
   }
   // фоновые «узлы данных» на свободных клетках — детализируют поле, детерминированно по клетке
   c.fillStyle = 'rgba(0,229,255,0.10)';
-  for (let cc=0; cc<COLS; cc++){
-    for (let cr=0; cr<ROWS; cr++){
+  for (let cc=0; cc<G.cols; cc++){
+    for (let cr=0; cr<G.rows; cr++){
       const k = cc+','+cr;
       if (G.pathCells.has(k) || G.deco.has(k)) continue;
       if (((cc*7 + cr*13) % 5) !== 0) continue;
       const x = V.ox+(cc+0.5)*V.cs, y = V.oy+(cr+0.5)*V.cs;
       c.beginPath(); c.arc(x, y, Math.max(1.5, V.cs*0.045), 0, TAU); c.fill();
     }
-  }
   }
 }
 
@@ -2672,7 +2657,7 @@ function drawPathFlow(ctx){
 
 function drawPortals(ctx){
   G.paths.forEach((pts, i)=>{
-    const cell = pts.find(p=>p[0]>=0 && p[0]<COLS && p[1]>=0 && p[1]<ROWS) || pts[0];
+    const cell = pts.find(p=>p[0]>=0 && p[0]<G.cols && p[1]>=0 && p[1]<G.rows) || pts[0];
     const cx = V.ox+(cell[0]+0.5)*V.cs, cy = V.oy+(cell[1]+0.5)*V.cs;
     const t = G.time*2 + i*2.1;
     drawGlow(ctx, cx, cy, V.cs*0.5, G.map.color, 0.35);
@@ -3024,17 +3009,10 @@ function renderGame(){
   ctx.save();
   try{
     ctx.translate(sx, sy);
-    // фон непрозрачный и обязателен: если пререндера нет — строим лениво,
-    // а на крайний случай заливаем подложку. Иначе кадры наслаиваются в артефакты.
-    if (!boardBG) renderBoardBG();
-    if (boardBG){
-      ctx.drawImage(boardBG, V.ox-24, V.oy-24, (V.w+48), (V.h+48));
-    } else {
-      ctx.fillStyle = '#05070f';
-      ctx.fillRect(-24, -24, V.w+48, V.h+48);
-    }
-    // каждая секция независимо — сбой одной не портит кадр
+    // фон рисуется ПЕРВЫМ и непрозрачным — наслоение кадров невозможно.
+    // ОБЯЗАТЕЛЬНО со смещением камеры, иначе трасса остаётся на месте при панораме
     const section = (f)=>{ try{ f(ctx); }catch(e){ reportErr(e); } };
+    section(drawBGContent);
     section(drawPathFlow);
     section(drawPortals);
     section(drawCore);
