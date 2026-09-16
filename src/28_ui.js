@@ -66,7 +66,26 @@ const UI = {
     $('maps-stars').textContent = '★ '+ts+'/'+(MAPS.length*3);
     document.querySelector('#screen-maps h2').textContent = endlessMode ? t('endless_title') : t('select_map');
     let shownAny = false;
+    if (endlessMode){
+      // особое поле — большая карта только для бесконечного режима
+      const ai = MAPS.findIndex(m=>m.endlessOnly);
+      if (ai >= 0){
+        const m = MAPS[ai];
+        const card = document.createElement('div');
+        card.className = 'map-card panel';
+        card.style.borderColor = hexA(m.color, 0.55);
+        card.innerHTML =
+          '<canvas width="240" height="100"></canvas>'+
+          '<div class="mc-name"><span style="color:'+m.color+'">'+t(m.key)+'</span><em style="color:'+m.color+'">'+t('endless_arena')+'</em></div>'+
+          '<div class="mc-row"><span class="chip" style="padding:3px 9px;font-size:11px">'+t('endless_best',{n:mapSave(ai).best||0})+'</span></div>';
+        grid.appendChild(card);
+        drawMapPreview(card.querySelector('canvas'), m);
+        card.addEventListener('click', ()=>{ AudioSys.play('click'); startGame(ai, true); });
+      }
+    }
     MAPS.forEach((m,i)=>{
+      if (endlessMode && m.endlessOnly) return;
+      if (!endlessMode && m.endlessOnly) return;
       const ms = mapSave(i);
       const locked = endlessMode ? ms.stars < 1 : ts < m.need;
       if (endlessMode && (locked || ms.stars < 1)) return;
@@ -601,6 +620,9 @@ function statList(kind, lv){
         .concat(lv.pierce ? [[t('st_pierce'), lv.pierce]] : []);
     case 'missile':
       return [[t('st_dmg'), M], [t('st_splash'), lv.splash], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]];
+    case 'mortar':
+      return [[t('st_dmg'), M], [t('st_splash'), lv.splash], [t('st_rate'), lv.rate+t('sec_per')],
+              [t('st_range'), lv.range], [t('st_min'), lv.minRange]];
     case 'tesla':
       return [[t('st_dmg'), M], [t('st_chain'), lv.chain], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]];
     case 'cryo':
@@ -675,12 +697,13 @@ function setLowGfx(on){
 function drawMapPreview(cv, m){
   const c = cv.getContext('2d');
   const W = cv.width, H = cv.height;
-  const sx = (W-24)/COLS, sy = (H-16)/ROWS, s = Math.min(sx, sy);
+  const mc = m.cols || COLS, mr = m.rows || ROWS;
+  const sx = (W-24)/mc, sy = (H-16)/mr, s = Math.min(sx, sy);
   const ox = (W - s*COLS)/2, oy = (H - s*ROWS)/2;
   c.fillStyle = 'rgba(3,6,14,0.9)'; c.fillRect(0,0,W,H);
   c.strokeStyle = 'rgba(0,229,255,0.08)';
-  for (let i=0;i<=COLS;i++){ c.beginPath(); c.moveTo(ox+i*s, oy); c.lineTo(ox+i*s, oy+ROWS*s); c.stroke(); }
-  for (let j=0;j<=ROWS;j++){ c.beginPath(); c.moveTo(ox, oy+j*s); c.lineTo(ox+COLS*s, oy+j*s); c.stroke(); }
+  for (let i=0;i<=mc;i++){ c.beginPath(); c.moveTo(ox+i*s, oy); c.lineTo(ox+i*s, oy+mr*s); c.stroke(); }
+  for (let j=0;j<=mr;j++){ c.beginPath(); c.moveTo(ox, oy+j*s); c.lineTo(ox+mc*s, oy+j*s); c.stroke(); }
   // путь
   const P = (pt)=>[ox+(pt[0]+0.5)*s, oy+(pt[1]+0.5)*s];
   c.lineJoin = 'round'; c.lineCap = 'round';

@@ -496,6 +496,10 @@ ru: {
   st_amp:'Усиление', st_poison:'Яд за стак', tw_amp:'Амплифер', tw_amp_d:'Усиливает соседние башни',
   tw_toxin:'Токсин', tw_toxin_d:'Стакающий яд, игнорирует броню',
   br_toxin_a:'Чума', br_toxin_b:'Кислота',
+  tw_mortar:'Мортира', tw_mortar_d:'Ракеты по дуге на большие дистанции, не бьёт вплотную',
+  br_mortar_a:'Кассета', br_mortar_b:'Фугас',
+  st_min:'Мин. дистанция', pan_hint:'Большое поле: веди пальцем, чтобы двигать камеру',
+  endless_arena:'ОСОБОЕ ПОЛЕ',
   auto_btn:'Авто', auto_tip:'Автостарт волн',
 
   lab:'Лаборатория', maxed:'МАКС', buy:'Купить',
@@ -605,6 +609,10 @@ en: {
   st_amp:'Boost', st_poison:'Poison per stack', tw_amp:'Amplifier', tw_amp_d:'Boosts neighboring towers',
   tw_toxin:'Toxin', tw_toxin_d:'Stacking poison, ignores armor',
   br_toxin_a:'Plague', br_toxin_b:'Acid',
+  tw_mortar:'Mortar', tw_mortar_d:'Arc rockets at long range, cannot hit close',
+  br_mortar_a:'Cluster', br_mortar_b:'HE Shell',
+  st_min:'Min range', pan_hint:'Big field: drag to move the camera',
+  endless_arena:'ARENA',
   auto_btn:'Auto', auto_tip:'Auto-start waves',
 
   lab:'Lab', maxed:'MAX', buy:'Buy',
@@ -774,13 +782,18 @@ const TOWERS = {
     branches:{
       a:{ key:'br_toxin_a', lv:{dmg:14, cap:12, rate:1.4, range:3.0, up:150} },
       b:{ key:'br_toxin_b', lv:{dmg:10, cap:8, rate:1.3, range:2.9, acid:true, up:150} } } },
+  mortar:{ key:'tw_mortar', cost:130, color:'#ff4d00', kind:'mortar',
+    lv:[{dmg:50, rate:0.35, range:6.5, minRange:2, splash:1.6},{dmg:75, rate:0.38, range:7, splash:1.9, up:165}],
+    branches:{
+      a:{ key:'br_mortar_a', lv:{dmg:60, rate:0.5, range:7, minRange:2.2, splash:1.6, up:330} },
+      b:{ key:'br_mortar_b', lv:{dmg:130, rate:0.35, range:7.5, minRange:2.5, splash:2.6, stun:0.6, up:330} } } },
   amp:{ key:'tw_amp', cost:80, color:'#ffe94d', kind:'amp',
     lv:[{boost:0.20, range:2.5},{boost:0.32, range:2.8, up:70}],
     branches:{
       a:{ key:'br_amp_a', lv:{boost:0.55, range:3.6, up:140} },
       b:{ key:'br_amp_b', lv:{boost:0.75, range:2.3, up:140} } } },
 };
-const TOWER_ORDER = ['pulse','cryo','missile','tesla','toxin','sniper','bank','beam','amp'];
+const TOWER_ORDER = ['pulse','cryo','missile','tesla','toxin','sniper','mortar','bank','beam','amp'];
 /* Цены улучшений: +25% к базовым — прокачать всё подряд невозможно */
 for (const tk in TOWERS){
   TOWERS[tk].lv.forEach(l=>{ if (l.up) l.up = Math.round(l.up*1.25); });
@@ -790,7 +803,7 @@ for (const tk in TOWERS){
   }
 }
 /* Открытие башен за суммарные звёзды */
-const UNLOCK_STARS = { pulse:0, cryo:0, missile:0, tesla:4, sniper:8, toxin:10, bank:12, beam:16, amp:7 };
+const UNLOCK_STARS = { pulse:0, cryo:0, missile:0, tesla:4, sniper:8, toxin:10, mortar:14, bank:12, beam:16, amp:7 };
 
 /* ---- Активные способности игрока ---- */
 const ABILITIES = {
@@ -858,6 +871,12 @@ const MAPS = [
     paths:[[[-1, 1], [3, 1], [3, 3], [8, 3], [8, 1], [10, 1], [10, 4], [6, 4]],
     [[12, 7], [9, 7], [9, 5], [4, 5], [4, 7], [2, 7], [2, 5], [6, 5], [6, 4]],
     [[-1, 8], [7, 8], [7, 6], [6, 6], [6, 4]]], deco:[[5, 2], [1, 3], [9, 8], [8, 6]] },
+  { key:'map_arena',   mult:1.0,  need:0,  color:'#66ffe0', cols:22, rows:14, endlessOnly:true,
+    paths:[[[-1,2],[5,2],[5,7],[11,7]],
+           [[22,12],[16,12],[16,7],[11,7]],
+           [[-1,12],[8,12],[8,9],[11,9],[11,7]],
+           [[22,2],[17,2],[17,4],[13,4],[13,7],[11,7]]],
+    "deco":[[2,4],[3,9],[13,2],[19,10],[6,3],[14,11]] },
   { key:'map_trinity', mult:1.6, need:21, color:'#00ff9d',
     paths:[[[-1, 1], [2, 1], [2, 3], [8, 3], [8, 1], [10, 1], [10, 4], [5, 4]],
     [[-1, 7], [2, 7], [2, 5], [8, 5], [8, 7], [10, 7], [10, 4], [5, 4]],
@@ -1357,6 +1376,14 @@ function drawTowerAt(ctx, type, lvl, px, py, cs, aim, color){
       ctx.beginPath(); ctx.arc(-g*0.12, g*0.42, g*0.12, 0, TAU); ctx.stroke();
       ctx.beginPath(); ctx.arc(g*0.16, g*0.55, g*0.08, 0, TAU); ctx.stroke();
       break;
+    case 'mortar': // мортира: короткий толстый ствол под углом вверх
+      ctx.save(); ctx.rotate((aim||0) - 0.9);
+      ctx.lineWidth = Math.max(2.5, cs*0.08);
+      ctx.beginPath(); ctx.moveTo(-g*0.2, 0); ctx.lineTo(g, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g, 0, g*0.28, 0, TAU); ctx.stroke();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(-g*0.25, g*0.25, g*0.3, 0, TAU); ctx.stroke();
+      break;
     case 'amp': // излучатель: концентрические дуги
       ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.4, -TAU/4, TAU/4); ctx.stroke();
       ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.85, -TAU/4, TAU/4); ctx.stroke();
@@ -1783,16 +1810,24 @@ function computePaths(map){
     for (const [c,r] of pts)
       if (c>=0 && c<COLS && r>=0 && r<ROWS) G.pathCells.add(c+','+r);
   G.deco = new Set(map.deco.map(d=>d[0]+','+d[1]));
-  // зоны стройки: свободные клетки вокруг трассы (8 соседей)
+  G.cols = map.cols || COLS;
+  G.rows = map.rows || ROWS;
+  // зоны стройки: «премиальные» точки — клетки, у которых трасса проходит минимум
+  // дважды рядом (двойное покрытие), плюс клетки вплотную к дороге
   G.buildable = new Set();
-  for (const k of G.pathCells){
-    const [pc, pr] = k.split(',').map(Number);
+  const neighbours = (c, r) => {
+    let n = 0, ortho = false;
     for (let dc=-1; dc<=1; dc++) for (let dr=-1; dr<=1; dr++){
-      const c = pc+dc, r = pr+dr;
-      if (c<0 || r<0 || c>=COLS || r>=ROWS) continue;
-      const bk = c+','+r;
-      if (!G.pathCells.has(bk) && !G.deco.has(bk)) G.buildable.add(bk);
+      if (!dc && !dr) continue;
+      if (G.pathCells.has((c+dc)+','+(r+dr))){ n++; if (!dc || !dr) ortho = true; }
     }
+    return { n, ortho };
+  };
+  for (let c=0; c<G.cols; c++) for (let r=0; r<G.rows; r++){
+    const k = c+','+r;
+    if (G.pathCells.has(k) || G.deco.has(k)) continue;
+    const { n, ortho } = neighbours(c, r);
+    if (n >= 2 || (n >= 1 && ortho)) G.buildable.add(k);
   }
   G.core = G.paths[0][G.paths[0].length-1];
 }
@@ -1808,13 +1843,28 @@ function computeView(){
   V.dpr = S.lowgfx ? 1 : Math.min(window.devicePixelRatio||1, 1.5); // низкая графика = 1x, обычно — до 1.5x
   V.w = w; V.h = h;
   boardCv.width = Math.round(w*V.dpr); boardCv.height = Math.round(h*V.dpr);
-  V.cs = Math.min(w/COLS, h/ROWS);
-  V.ox = (w - V.cs*COLS)/2;
-  const slackY = h - V.cs*ROWS;
-  V.oy = slackY > V.cs*2 ? 2 : slackY/2; // портрет: поле прижато к HUD, пустота уходит к кнопке волны
+  const C = (G.active && G.cols) || COLS, R = (G.active && G.rows) || ROWS;
+  // большие карты: клетки не мельче 34px, поле панорамируется
+  V.cs = Math.max(Math.min(w/C, h/R), 34);
+  const bw = C*V.cs, bh = R*V.cs;
+  // сохраняем центр камеры при пересчёте размеров
+  let cx = (V.ox + V.w/2) / Math.max(1, bw), cy = (V.oy + V.h/2) / Math.max(1, bh);
+  V.ox = cx*bw - w/2;
+  V.oy = cy*bh - h/2;
+  if (bw <= w) V.ox = (w - bw)/2;
+  if (bh <= h) V.oy = (h - bh) > V.cs*2 ? 2 : (h - bh)/2; // портрет: поле прижато к HUD
+  clampCam(C, R);
   computePathPxs();
   renderBoardBG();
   renderGame(); // ресайз мог случиться на паузе — кадр должен остаться актуальным
+}
+/* Камера не даёт показать пустоту за пределами поля */
+function clampCam(C, R){
+  C = C || ((G.active && G.cols) || COLS);
+  R = R || ((G.active && G.rows) || ROWS);
+  const bw = C*V.cs, bh = R*V.cs;
+  V.ox = bw <= V.w ? (V.w - bw)/2 : clamp(V.ox, V.w - bw, 0);
+  V.oy = bh <= V.h ? ((V.h - bh) > V.cs*2 ? 2 : (V.h - bh)/2) : clamp(V.oy, V.h - bh, 0);
 }
 
 /* ---------- Старт/выход партии ---------- */
@@ -1842,6 +1892,10 @@ function startGame(mapIdx, endless){
   UI.updateHUD(true);
   UI.refreshWaveUI();
   UI.hintLogic();
+  if ((G.map.cols||12) > 12 && !S.seen.pan){
+    S.seen.pan = 1; persist();
+    UI.toast(t('pan_hint'), 'warn');
+  }
 }
 
 function exitGame(){
@@ -1853,7 +1907,7 @@ function exitGame(){
 
 /* ---------- Постройка/улучшение/продажа ---------- */
 function canPlace(c,r){
-  if (c<0||r<0||c>=COLS||r>=ROWS) return false;
+  if (c<0||r<0||c>=G.cols||r>=G.rows) return false;
   const k = c+','+r;
   return G.buildable.has(k) && !G.towerGrid.has(k);
 }
@@ -1922,9 +1976,11 @@ function sellTower(tw){
 /* ---------- Прицеливание и стрельба ---------- */
 function acquireTarget(tw, lv){
   const r2 = lv.range*lv.range;
+  const mr2 = (lv.minRange||0)*(lv.minRange||0);
   let best = null, bestKey = -Infinity;
   for (const e of EP){
     if (!e.alive || e.dead || e.phased) continue;
+    if (mr2 && dist2(tw.x, tw.y, e.x, e.y) < mr2) continue; // мортира не бьёт вплотную
     if (dist2(tw.x, tw.y, e.x, e.y) > r2) continue;
     let key;
     if (tw.mode === 'last') key = -e.dist;
@@ -1978,6 +2034,23 @@ function fireToxin(tw, e, lv, dmgMul){
   damage(e, 4*dmgMul, 99, true, tw.type);
   AudioSys.play('toxin');
 }
+function fireMortar(tw, e, lv, dmgMul){
+  const b = bpGet();
+  if (!b) return;
+  const dist = Math.hypot(e.x-tw.x, e.y-tw.y);
+  b.alive = true; b.arcT = 0;
+  b.T = 0.55 + dist*0.05;
+  b.sx = tw.x; b.sy = tw.y;
+  b.lx = e.x; b.ly = e.y;          // артиллерия бьёт по точке на момент выстрела
+  b.x = tw.x; b.y = tw.y; b.px = tw.x; b.py = tw.y;
+  b.dmg = lv.dmg*dmgMul; b.rad = lv.splash; b.color = TOWERS.mortar.color;
+  b.src = tw.type; b.stun = lv.stun||0; b.big = true;
+  b.H = Math.min(dist*0.45, 6);    // высота дуги в клетках
+  burst(V.ox+tw.x*V.cs, V.oy+tw.y*V.cs, b.color, 6, 120, 0.3);
+  tw.aim = Math.atan2(e.y-tw.y, e.x-tw.x);
+  AudioSys.play('missile');
+  G.shake(2);
+}
 function fireMissile(tw, e, lv, dmgMul){
   const b = bpGet();
   if (b){
@@ -1991,9 +2064,9 @@ function fireMissile(tw, e, lv, dmgMul){
 function explode(b){
   b.alive = false;
   const px = V.ox+b.x*V.cs, py = V.oy+b.y*V.cs;
-  burst(px,py,'#ffb020',14,190,0.45);
-  ring(px,py,b.color, b.rad*V.cs*0.2, b.rad*V.cs, 0.3, 2.5);
-  AudioSys.play('boom'); G.shake(3);
+  burst(px,py,'#ffb020', b.big ? 26 : 14, b.big ? 240 : 190, 0.45);
+  ring(px,py,b.color, b.rad*V.cs*0.2, b.rad*V.cs, 0.3, b.big ? 3.5 : 2.5);
+  AudioSys.play('boom'); G.shake(b.big ? 7 : 3);
   const r2 = b.rad*b.rad;
   for (const e of EP){
     if (!e.alive || e.dead || e.phased) continue;
@@ -2001,6 +2074,7 @@ function explode(b){
     if (d2 <= r2){
       const f = 1 - 0.5*Math.sqrt(d2)/b.rad;
       damage(e, b.dmg*f, 1, false, b.src);
+      if (b.stun && e.alive && !e.dead) e.stunT = Math.max(e.stunT||0, b.stun);
     }
   }
 }
@@ -2139,6 +2213,15 @@ function updateTowers(dt){
       }
       continue;
     }
+    if (def.kind === 'mortar'){
+      tw.cd -= dt*overMul;
+      if (tw.cd <= 0){
+        const e = acquireTarget(tw, lv);
+        if (e){ fireMortar(tw, e, lv, dmgMul*tw.amp); tw.cd = 1/lv.rate; }
+        else tw.cd = 0;
+      }
+      continue;
+    }
     if (def.kind === 'beam'){ beamTick(tw, def, lv, dt, dmgMul*tw.amp*overMul); continue; }
     tw.cd -= dt*overMul;
     if (tw.cd <= 0){
@@ -2156,6 +2239,24 @@ function updateTowers(dt){
 function updateBullets(dt){
   for (const b of BP){
     if (!b.alive) continue;
+    if (b.arcT !== undefined){ // дуговая ракета мортиры
+      b.arcT += dt;
+      const k = Math.min(1, b.arcT/b.T);
+      b.px = b.x; b.py = b.y;
+      b.x = lerp(b.sx, b.lx, k);
+      b.y = lerp(b.sy, b.ly, k);
+      b.h = Math.sin(Math.PI*k)*b.H;
+      if (Math.random() < 0.5){
+        const p = ppGet();
+        if (p){
+          p.alive = true; p.x = V.ox+b.x*V.cs; p.y = V.oy+(b.y-b.h*0)*V.cs - b.h*V.cs;
+          p.vx = rnd(-8,8); p.vy = rnd(-8,8);
+          p.t = 0; p.ttl = 0.3; p.color = '#ffb020'; p.size = 2; p.kind = 'spark';
+        }
+      }
+      if (k >= 1) explode(b);
+      continue;
+    }
     if (b.tgt && b.tgt.alive && !b.tgt.dead && !b.tgt.phased){ b.lx = b.tgt.x; b.ly = b.tgt.y; }
     b.px = b.x; b.py = b.y;
     const dx = b.lx-b.x, dy = b.ly-b.y, d = Math.hypot(dx,dy);
@@ -2424,10 +2525,10 @@ function drawBGContent(c){
   c.fillStyle = g; c.fillRect(0,0,V.w,V.h);
   // сетка
   c.strokeStyle = 'rgba(0,229,255,0.05)'; c.lineWidth = 1;
-  for (let i=0;i<=COLS;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+ROWS*V.cs); c.stroke(); }
-  for (let j=0;j<=ROWS;j++){ c.beginPath(); c.moveTo(V.ox, V.oy+j*V.cs); c.lineTo(V.ox+COLS*V.cs, V.oy+j*V.cs); c.stroke(); }
+  for (let i=0;i<=G.cols;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+G.rows*V.cs); c.stroke(); }
+  for (let j=0;j<=G.rows;j++){ c.beginPath(); c.moveTo(V.ox, V.oy+j*V.cs); c.lineTo(V.ox+G.cols*V.cs, V.oy+j*V.cs); c.stroke(); }
   c.strokeStyle = 'rgba(0,229,255,0.16)';
-  c.strokeRect(V.ox, V.oy, COLS*V.cs, ROWS*V.cs);
+  c.strokeRect(V.ox, V.oy, G.cols*V.cs, G.rows*V.cs);
   // клетки пути
   c.fillStyle = 'rgba(0,229,255,0.05)';
   for (const k of G.pathCells){
@@ -2461,14 +2562,36 @@ function drawBGContent(c){
       c.beginPath(); c.arc(x, y, Math.max(1.5, V.cs*0.045), 0, TAU); c.fill();
     }
   }
-  // площадки стройки: едва заметные скругления в зонах
-  c.strokeStyle = 'rgba(0,229,255,0.14)';
-  c.lineWidth = 1;
+  }
+}
+
+/* Пульсирующие площадки стройки — заметны на любом фоне */
+function drawBuildPads(ctx){
+  const pulse = 0.28 + 0.16*Math.sin(G.time*2.4);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,229,255,'+pulse.toFixed(3)+')';
+  ctx.lineWidth = 1.5;
+  const corner = Math.max(3, V.cs*0.18);
   for (const k of G.buildable){
-    const [cc,cr] = k.split(',').map(Number);
-    rr(c, V.ox+cc*V.cs+3, V.oy+cr*V.cs+3, V.cs-6, V.cs-6, 4); c.stroke();
+    if (G.towerGrid.has(k)) continue;
+    const x = V.ox + Number(k.split(',')[0])*V.cs + 3;
+    const y = V.oy + Number(k.split(',')[1])*V.cs + 3;
+    const sz = V.cs - 6;
+    rr(ctx, x, y, sz, sz, 4); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,229,255,'+(pulse*0.5).toFixed(3)+')';
+    ctx.fillRect(x+sz/2-1.5, y+sz/2-1.5, 3, 3);
+    if (!S.lowgfx){
+      ctx.strokeStyle = 'rgba(0,229,255,'+(pulse*1.4).toFixed(3)+')';
+      ctx.beginPath();
+      ctx.moveTo(x, y+corner); ctx.lineTo(x, y); ctx.lineTo(x+corner, y);
+      ctx.moveTo(x+sz-corner, y); ctx.lineTo(x+sz, y); ctx.lineTo(x+sz, y+corner);
+      ctx.moveTo(x+sz, y+sz-corner); ctx.lineTo(x+sz, y+sz); ctx.lineTo(x+sz-corner, y+sz);
+      ctx.moveTo(x+corner, y+sz); ctx.lineTo(x, y+sz); ctx.lineTo(x, y+sz-corner);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,229,255,'+pulse.toFixed(3)+')';
+    }
   }
-  }
+  ctx.restore();
 }
 
 function drawPathFlow(ctx){
@@ -2644,9 +2767,28 @@ function drawRange(ctx, px, py, range, color){
 }
 
 function drawBulletsFx(ctx){
+  // маркер точки прилёта мортиры
+  for (const b of BP){
+    if (!b.alive || b.arcT === undefined) continue;
+    const mx = V.ox+b.lx*V.cs, my = V.oy+b.ly*V.cs;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = b.color; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(mx, my, b.rad*V.cs, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
   // ракеты
   for (const b of BP){
     if (!b.alive) continue;
+    if (b.arcT !== undefined){
+      const px = V.ox+b.x*V.cs;
+      const py = V.oy+(b.y - b.h)*V.cs; // высота дуги
+      drawGlow(ctx, px, py, 6, b.color, 0.9);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(px-2, py-2, 4, 4);
+      continue;
+    }
     const px = V.ox+b.x*V.cs, py = V.oy+b.y*V.cs;
     const qx = V.ox+b.px*V.cs, qy = V.oy+b.py*V.cs;
     ctx.strokeStyle = hexA(b.color, 0.6); ctx.lineWidth = 2;
@@ -2778,14 +2920,15 @@ function drawGhostAndSelection(ctx){
       ctx.fillText(label, px, ly+13);
     }
   }
-  if (G.placing && G.hoverCell){
+  if ((G.placing || G.dragPlacing) && G.hoverCell){
+    const placingType = G.placing || G.dragPlacing;
     const [c,r] = G.hoverCell;
-    const def = TOWERS[G.placing], lv = def.lv[0];
+    const def = TOWERS[placingType], lv = def.lv[0];
     const ok = canPlace(c,r) && G.cash >= def.cost;
     const px = V.ox+(c+0.5)*V.cs, py = V.oy+(r+0.5)*V.cs;
     drawRange(ctx, px, py, lv.range, ok ? def.color : '#ff3355');
     ctx.save(); ctx.globalAlpha = 0.6;
-    drawTowerAt(ctx, G.placing, 1, px, py, V.cs, -TAU/8, ok ? def.color : '#ff3355');
+    drawTowerAt(ctx, placingType, 1, px, py, V.cs, -TAU/8, ok ? def.color : '#ff3355');
     ctx.restore();
     if (ok){
       ctx.strokeStyle = hexA(def.color, 0.8); ctx.lineWidth = 1.5;
@@ -2897,7 +3040,26 @@ const UI = {
     $('maps-stars').textContent = '★ '+ts+'/'+(MAPS.length*3);
     document.querySelector('#screen-maps h2').textContent = endlessMode ? t('endless_title') : t('select_map');
     let shownAny = false;
+    if (endlessMode){
+      // особое поле — большая карта только для бесконечного режима
+      const ai = MAPS.findIndex(m=>m.endlessOnly);
+      if (ai >= 0){
+        const m = MAPS[ai];
+        const card = document.createElement('div');
+        card.className = 'map-card panel';
+        card.style.borderColor = hexA(m.color, 0.55);
+        card.innerHTML =
+          '<canvas width="240" height="100"></canvas>'+
+          '<div class="mc-name"><span style="color:'+m.color+'">'+t(m.key)+'</span><em style="color:'+m.color+'">'+t('endless_arena')+'</em></div>'+
+          '<div class="mc-row"><span class="chip" style="padding:3px 9px;font-size:11px">'+t('endless_best',{n:mapSave(ai).best||0})+'</span></div>';
+        grid.appendChild(card);
+        drawMapPreview(card.querySelector('canvas'), m);
+        card.addEventListener('click', ()=>{ AudioSys.play('click'); startGame(ai, true); });
+      }
+    }
     MAPS.forEach((m,i)=>{
+      if (endlessMode && m.endlessOnly) return;
+      if (!endlessMode && m.endlessOnly) return;
       const ms = mapSave(i);
       const locked = endlessMode ? ms.stars < 1 : ts < m.need;
       if (endlessMode && (locked || ms.stars < 1)) return;
@@ -3432,6 +3594,9 @@ function statList(kind, lv){
         .concat(lv.pierce ? [[t('st_pierce'), lv.pierce]] : []);
     case 'missile':
       return [[t('st_dmg'), M], [t('st_splash'), lv.splash], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]];
+    case 'mortar':
+      return [[t('st_dmg'), M], [t('st_splash'), lv.splash], [t('st_rate'), lv.rate+t('sec_per')],
+              [t('st_range'), lv.range], [t('st_min'), lv.minRange]];
     case 'tesla':
       return [[t('st_dmg'), M], [t('st_chain'), lv.chain], [t('st_rate'), lv.rate+t('sec_per')], [t('st_range'), lv.range]];
     case 'cryo':
@@ -3506,12 +3671,13 @@ function setLowGfx(on){
 function drawMapPreview(cv, m){
   const c = cv.getContext('2d');
   const W = cv.width, H = cv.height;
-  const sx = (W-24)/COLS, sy = (H-16)/ROWS, s = Math.min(sx, sy);
+  const mc = m.cols || COLS, mr = m.rows || ROWS;
+  const sx = (W-24)/mc, sy = (H-16)/mr, s = Math.min(sx, sy);
   const ox = (W - s*COLS)/2, oy = (H - s*ROWS)/2;
   c.fillStyle = 'rgba(3,6,14,0.9)'; c.fillRect(0,0,W,H);
   c.strokeStyle = 'rgba(0,229,255,0.08)';
-  for (let i=0;i<=COLS;i++){ c.beginPath(); c.moveTo(ox+i*s, oy); c.lineTo(ox+i*s, oy+ROWS*s); c.stroke(); }
-  for (let j=0;j<=ROWS;j++){ c.beginPath(); c.moveTo(ox, oy+j*s); c.lineTo(ox+COLS*s, oy+j*s); c.stroke(); }
+  for (let i=0;i<=mc;i++){ c.beginPath(); c.moveTo(ox+i*s, oy); c.lineTo(ox+i*s, oy+mr*s); c.stroke(); }
+  for (let j=0;j<=mr;j++){ c.beginPath(); c.moveTo(ox, oy+j*s); c.lineTo(ox+mc*s, oy+j*s); c.stroke(); }
   // путь
   const P = (pt)=>[ox+(pt[0]+0.5)*s, oy+(pt[1]+0.5)*s];
   c.lineJoin = 'round'; c.lineCap = 'round';
@@ -3607,64 +3773,125 @@ function cellFromEvent(ev){
   return [Math.floor(x/V.cs), Math.floor(y/V.cs)];
 }
 
+let drag = null;      // жест на поле: панорама или тап
+let cardDrag = null;  // перетаскивание башни из панели
+
 function initInput(){
   const wrap = $('boardwrap');
 
-  // Наведение — для призрака установки (мышь) и курсора над башней
+  // Наведение — призрак установки, курсор, панорама
   boardCv.addEventListener('pointermove', (ev)=>{
     if (!G.active) return;
     G.hoverCell = cellFromEvent(ev);
     if (ev.pointerType === 'mouse'){
-      const overTower = !G.placing && G.hoverCell && towerAt(G.hoverCell[0], G.hoverCell[1]);
-      boardCv.style.cursor = G.placing ? 'crosshair' : (overTower ? 'pointer' : 'default');
+      const overTower = !G.placing && !G.dragPlacing && G.hoverCell && towerAt(G.hoverCell[0], G.hoverCell[1]);
+      boardCv.style.cursor = (G.placing || G.dragPlacing || G.targeting) ? 'crosshair' : (overTower ? 'pointer' : 'default');
+    }
+    if (!drag || ev.pointerId !== drag.id) return;
+    const dx = ev.clientX - drag.x0, dy = ev.clientY - drag.y0;
+    if (!drag.moved && Math.hypot(dx, dy) > 7) drag.moved = true;
+    if (drag.moved && !drag.handled){
+      V.ox = drag.ox0 + dx;
+      V.oy = drag.oy0 + dy;
+      clampCam();
     }
   });
   boardCv.addEventListener('pointerleave', ()=>{
-    G.hoverCell = null;
     boardCv.style.cursor = 'default';
   });
 
-  // Клик/тап по полю: способность, установка башни или выбор существующей
+  // Нажатие: запоминаем жест (тап или панорама решаются на отпускании)
   boardCv.addEventListener('pointerdown', (ev)=>{
     AudioSys.resume();
     if (!G.active || G.state !== 'play') return;
     ev.preventDefault();
+    if (drag) return;
+    drag = { id: ev.pointerId, x0: ev.clientX, y0: ev.clientY, ox0: V.ox, oy0: V.oy, moved: false, handled: false };
     const [c, r] = cellFromEvent(ev);
     G.hoverCell = [c, r];
-    // ЭМИ-импульс: клик = каст в точку
     if (G.targeting === 'emp'){
       castEmp(c, r);
+      drag.handled = true;
       boardCv.style.cursor = 'default';
-      return;
     }
-    if (G.placing){
-      const def = TOWERS[G.placing];
-      if (canPlace(c, r) && G.cash >= def.cost){
-        placeTower(G.placing, c, r);
-        if (G.cash < def.cost) G.placing = null;
-        UI.syncBuildbar();
-      } else {
-        AudioSys.play('error');
-      }
-      return;
-    }
-    const tw = towerAt(c, r);
-    G.selected = tw;
-    UI.insKey = '';
-    UI.renderInspector();
-    AudioSys.play('click');
   });
 
   // Правая кнопка / долгий тап — отмена установки
   boardCv.addEventListener('contextmenu', (ev)=>{
     ev.preventDefault();
     if (G.placing){ G.placing = null; UI.syncBuildbar(); }
+    if (G.dragPlacing){ G.dragPlacing = null; UI.syncBuildbar(); }
+  });
+
+  // Отпускание: тап по полю (установка/выбор) или завершение панорамы
+  window.addEventListener('pointerup', (ev)=>{
+    if (!drag || ev.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (!G.active) return;
+    if (d.handled) return;
+    if (d.moved){ clampCam(); return; }   // это была панорама
+    const [c, r] = cellFromEvent(ev);
+    if (G.targeting === 'emp') return;    // импульс кастуется на pointerdown
+    if (G.placing || G.dragPlacing){
+      const tp = G.placing || G.dragPlacing;
+      const def = TOWERS[tp];
+      if (canPlace(c, r) && G.cash >= def.cost){
+        placeTower(tp, c, r);
+        haptic('light');
+        if (G.placing && G.cash < def.cost) G.placing = null;
+      } else {
+        AudioSys.play('error');
+        if (G.dragPlacing) G.dragPlacing = null;
+      }
+      UI.syncBuildbar();
+      UI.hideTip();
+      return;
+    }
+    const t = towerAt(c, r);
+    G.selected = t;
+    UI.insKey = '';
+    UI.renderInspector();
+    AudioSys.play('click');
   });
 
   // HUD-кнопки
   UI.els.btnSpeed.addEventListener('click', ()=>{
     G.speed = G.speed === 1 ? 2 : 1;
     AudioSys.play('click');
+  });
+  // перетаскивание башни из панели на поле
+  UI.els.buildbar.addEventListener('pointerdown', (ev)=>{
+    const card = ev.target.closest('.tcard');
+    if (!card || ev.pointerType === 'mouse' && ev.button !== 0) return;
+    cardDrag = { type: card.dataset.type, x0: ev.clientX, y0: ev.clientY, active: false, pointerId: ev.pointerId };
+  });
+  window.addEventListener('pointermove', (ev)=>{
+    if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
+    if (!cardDrag.active && Math.hypot(ev.clientX - cardDrag.x0, ev.clientY - cardDrag.y0) > 10){
+      cardDrag.active = true;
+      G.placing = null; G.selected = null;
+      G.dragPlacing = cardDrag.type;
+      UI.syncBuildbar(); UI.renderInspector();
+    }
+    if (cardDrag.active) G.hoverCell = null;
+  });
+  window.addEventListener('pointerup', (ev)=>{
+    if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
+    const cd = cardDrag; cardDrag = null;
+    if (cd.active){
+      const suppressedAt = Date.now();
+      UI.suppressCardClick = suppressedAt;
+      const [c, r] = cellFromEvent(ev);
+      const def = TOWERS[cd.type];
+      if (canPlace(c, r) && G.cash >= def.cost){
+        placeTower(cd.type, c, r);
+        haptic('light');
+      } else {
+        AudioSys.play('error');
+      }
+      G.dragPlacing = null;
+      UI.syncBuildbar();
+    }
   });
   UI.els.abEmp.addEventListener('click', ()=>{
     AudioSys.play('click');

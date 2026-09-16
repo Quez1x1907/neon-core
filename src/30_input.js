@@ -7,64 +7,125 @@ function cellFromEvent(ev){
   return [Math.floor(x/V.cs), Math.floor(y/V.cs)];
 }
 
+let drag = null;      // жест на поле: панорама или тап
+let cardDrag = null;  // перетаскивание башни из панели
+
 function initInput(){
   const wrap = $('boardwrap');
 
-  // Наведение — для призрака установки (мышь) и курсора над башней
+  // Наведение — призрак установки, курсор, панорама
   boardCv.addEventListener('pointermove', (ev)=>{
     if (!G.active) return;
     G.hoverCell = cellFromEvent(ev);
     if (ev.pointerType === 'mouse'){
-      const overTower = !G.placing && G.hoverCell && towerAt(G.hoverCell[0], G.hoverCell[1]);
-      boardCv.style.cursor = G.placing ? 'crosshair' : (overTower ? 'pointer' : 'default');
+      const overTower = !G.placing && !G.dragPlacing && G.hoverCell && towerAt(G.hoverCell[0], G.hoverCell[1]);
+      boardCv.style.cursor = (G.placing || G.dragPlacing || G.targeting) ? 'crosshair' : (overTower ? 'pointer' : 'default');
+    }
+    if (!drag || ev.pointerId !== drag.id) return;
+    const dx = ev.clientX - drag.x0, dy = ev.clientY - drag.y0;
+    if (!drag.moved && Math.hypot(dx, dy) > 7) drag.moved = true;
+    if (drag.moved && !drag.handled){
+      V.ox = drag.ox0 + dx;
+      V.oy = drag.oy0 + dy;
+      clampCam();
     }
   });
   boardCv.addEventListener('pointerleave', ()=>{
-    G.hoverCell = null;
     boardCv.style.cursor = 'default';
   });
 
-  // Клик/тап по полю: способность, установка башни или выбор существующей
+  // Нажатие: запоминаем жест (тап или панорама решаются на отпускании)
   boardCv.addEventListener('pointerdown', (ev)=>{
     AudioSys.resume();
     if (!G.active || G.state !== 'play') return;
     ev.preventDefault();
+    if (drag) return;
+    drag = { id: ev.pointerId, x0: ev.clientX, y0: ev.clientY, ox0: V.ox, oy0: V.oy, moved: false, handled: false };
     const [c, r] = cellFromEvent(ev);
     G.hoverCell = [c, r];
-    // ЭМИ-импульс: клик = каст в точку
     if (G.targeting === 'emp'){
       castEmp(c, r);
+      drag.handled = true;
       boardCv.style.cursor = 'default';
-      return;
     }
-    if (G.placing){
-      const def = TOWERS[G.placing];
-      if (canPlace(c, r) && G.cash >= def.cost){
-        placeTower(G.placing, c, r);
-        if (G.cash < def.cost) G.placing = null;
-        UI.syncBuildbar();
-      } else {
-        AudioSys.play('error');
-      }
-      return;
-    }
-    const tw = towerAt(c, r);
-    G.selected = tw;
-    UI.insKey = '';
-    UI.renderInspector();
-    AudioSys.play('click');
   });
 
   // Правая кнопка / долгий тап — отмена установки
   boardCv.addEventListener('contextmenu', (ev)=>{
     ev.preventDefault();
     if (G.placing){ G.placing = null; UI.syncBuildbar(); }
+    if (G.dragPlacing){ G.dragPlacing = null; UI.syncBuildbar(); }
+  });
+
+  // Отпускание: тап по полю (установка/выбор) или завершение панорамы
+  window.addEventListener('pointerup', (ev)=>{
+    if (!drag || ev.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (!G.active) return;
+    if (d.handled) return;
+    if (d.moved){ clampCam(); return; }   // это была панорама
+    const [c, r] = cellFromEvent(ev);
+    if (G.targeting === 'emp') return;    // импульс кастуется на pointerdown
+    if (G.placing || G.dragPlacing){
+      const tp = G.placing || G.dragPlacing;
+      const def = TOWERS[tp];
+      if (canPlace(c, r) && G.cash >= def.cost){
+        placeTower(tp, c, r);
+        haptic('light');
+        if (G.placing && G.cash < def.cost) G.placing = null;
+      } else {
+        AudioSys.play('error');
+        if (G.dragPlacing) G.dragPlacing = null;
+      }
+      UI.syncBuildbar();
+      UI.hideTip();
+      return;
+    }
+    const t = towerAt(c, r);
+    G.selected = t;
+    UI.insKey = '';
+    UI.renderInspector();
+    AudioSys.play('click');
   });
 
   // HUD-кнопки
   UI.els.btnSpeed.addEventListener('click', ()=>{
     G.speed = G.speed === 1 ? 2 : 1;
     AudioSys.play('click');
+  });
+  // перетаскивание башни из панели на поле
+  UI.els.buildbar.addEventListener('pointerdown', (ev)=>{
+    const card = ev.target.closest('.tcard');
+    if (!card || ev.pointerType === 'mouse' && ev.button !== 0) return;
+    cardDrag = { type: card.dataset.type, x0: ev.clientX, y0: ev.clientY, active: false, pointerId: ev.pointerId };
+  });
+  window.addEventListener('pointermove', (ev)=>{
+    if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
+    if (!cardDrag.active && Math.hypot(ev.clientX - cardDrag.x0, ev.clientY - cardDrag.y0) > 10){
+      cardDrag.active = true;
+      G.placing = null; G.selected = null;
+      G.dragPlacing = cardDrag.type;
+      UI.syncBuildbar(); UI.renderInspector();
+    }
+    if (cardDrag.active) G.hoverCell = null;
+  });
+  window.addEventListener('pointerup', (ev)=>{
+    if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
+    const cd = cardDrag; cardDrag = null;
+    if (cd.active){
+      const suppressedAt = Date.now();
+      UI.suppressCardClick = suppressedAt;
+      const [c, r] = cellFromEvent(ev);
+      const def = TOWERS[cd.type];
+      if (canPlace(c, r) && G.cash >= def.cost){
+        placeTower(cd.type, c, r);
+        haptic('light');
+      } else {
+        AudioSys.play('error');
+      }
+      G.dragPlacing = null;
+      UI.syncBuildbar();
+    }
   });
   UI.els.abEmp.addEventListener('click', ()=>{
     AudioSys.play('click');

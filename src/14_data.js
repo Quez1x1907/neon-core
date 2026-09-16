@@ -46,13 +46,18 @@ const TOWERS = {
     branches:{
       a:{ key:'br_toxin_a', lv:{dmg:14, cap:12, rate:1.4, range:3.0, up:150} },
       b:{ key:'br_toxin_b', lv:{dmg:10, cap:8, rate:1.3, range:2.9, acid:true, up:150} } } },
+  mortar:{ key:'tw_mortar', cost:130, color:'#ff4d00', kind:'mortar',
+    lv:[{dmg:50, rate:0.35, range:6.5, minRange:2, splash:1.6},{dmg:75, rate:0.38, range:7, splash:1.9, up:165}],
+    branches:{
+      a:{ key:'br_mortar_a', lv:{dmg:60, rate:0.5, range:7, minRange:2.2, splash:1.6, up:330} },
+      b:{ key:'br_mortar_b', lv:{dmg:130, rate:0.35, range:7.5, minRange:2.5, splash:2.6, stun:0.6, up:330} } } },
   amp:{ key:'tw_amp', cost:80, color:'#ffe94d', kind:'amp',
     lv:[{boost:0.20, range:2.5},{boost:0.32, range:2.8, up:70}],
     branches:{
       a:{ key:'br_amp_a', lv:{boost:0.55, range:3.6, up:140} },
       b:{ key:'br_amp_b', lv:{boost:0.75, range:2.3, up:140} } } },
 };
-const TOWER_ORDER = ['pulse','cryo','missile','tesla','toxin','sniper','bank','beam','amp'];
+const TOWER_ORDER = ['pulse','cryo','missile','tesla','toxin','sniper','mortar','bank','beam','amp'];
 /* Цены улучшений: +25% к базовым — прокачать всё подряд невозможно */
 for (const tk in TOWERS){
   TOWERS[tk].lv.forEach(l=>{ if (l.up) l.up = Math.round(l.up*1.25); });
@@ -62,7 +67,7 @@ for (const tk in TOWERS){
   }
 }
 /* Открытие башен за суммарные звёзды */
-const UNLOCK_STARS = { pulse:0, cryo:0, missile:0, tesla:4, sniper:8, toxin:10, bank:12, beam:16, amp:7 };
+const UNLOCK_STARS = { pulse:0, cryo:0, missile:0, tesla:4, sniper:8, toxin:10, mortar:14, bank:12, beam:16, amp:7 };
 
 /* ---- Активные способности игрока ---- */
 const ABILITIES = {
@@ -130,6 +135,12 @@ const MAPS = [
     paths:[[[-1, 1], [3, 1], [3, 3], [8, 3], [8, 1], [10, 1], [10, 4], [6, 4]],
     [[12, 7], [9, 7], [9, 5], [4, 5], [4, 7], [2, 7], [2, 5], [6, 5], [6, 4]],
     [[-1, 8], [7, 8], [7, 6], [6, 6], [6, 4]]], deco:[[5, 2], [1, 3], [9, 8], [8, 6]] },
+  { key:'map_arena',   mult:1.0,  need:0,  color:'#66ffe0', cols:22, rows:14, endlessOnly:true,
+    paths:[[[-1,2],[5,2],[5,7],[11,7]],
+           [[22,12],[16,12],[16,7],[11,7]],
+           [[-1,12],[8,12],[8,9],[11,9],[11,7]],
+           [[22,2],[17,2],[17,4],[13,4],[13,7],[11,7]]],
+    "deco":[[2,4],[3,9],[13,2],[19,10],[6,3],[14,11]] },
   { key:'map_trinity', mult:1.6, need:21, color:'#00ff9d',
     paths:[[[-1, 1], [2, 1], [2, 3], [8, 3], [8, 1], [10, 1], [10, 4], [5, 4]],
     [[-1, 7], [2, 7], [2, 5], [8, 5], [8, 7], [10, 7], [10, 4], [5, 4]],

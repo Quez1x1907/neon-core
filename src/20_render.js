@@ -205,6 +205,14 @@ function drawTowerAt(ctx, type, lvl, px, py, cs, aim, color){
       ctx.beginPath(); ctx.arc(-g*0.12, g*0.42, g*0.12, 0, TAU); ctx.stroke();
       ctx.beginPath(); ctx.arc(g*0.16, g*0.55, g*0.08, 0, TAU); ctx.stroke();
       break;
+    case 'mortar': // мортира: короткий толстый ствол под углом вверх
+      ctx.save(); ctx.rotate((aim||0) - 0.9);
+      ctx.lineWidth = Math.max(2.5, cs*0.08);
+      ctx.beginPath(); ctx.moveTo(-g*0.2, 0); ctx.lineTo(g, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g, 0, g*0.28, 0, TAU); ctx.stroke();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(-g*0.25, g*0.25, g*0.3, 0, TAU); ctx.stroke();
+      break;
     case 'amp': // излучатель: концентрические дуги
       ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.4, -TAU/4, TAU/4); ctx.stroke();
       ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.85, -TAU/4, TAU/4); ctx.stroke();

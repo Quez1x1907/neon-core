@@ -39,16 +39,24 @@ function computePaths(map){
     for (const [c,r] of pts)
       if (c>=0 && c<COLS && r>=0 && r<ROWS) G.pathCells.add(c+','+r);
   G.deco = new Set(map.deco.map(d=>d[0]+','+d[1]));
-  // зоны стройки: свободные клетки вокруг трассы (8 соседей)
+  G.cols = map.cols || COLS;
+  G.rows = map.rows || ROWS;
+  // зоны стройки: «премиальные» точки — клетки, у которых трасса проходит минимум
+  // дважды рядом (двойное покрытие), плюс клетки вплотную к дороге
   G.buildable = new Set();
-  for (const k of G.pathCells){
-    const [pc, pr] = k.split(',').map(Number);
+  const neighbours = (c, r) => {
+    let n = 0, ortho = false;
     for (let dc=-1; dc<=1; dc++) for (let dr=-1; dr<=1; dr++){
-      const c = pc+dc, r = pr+dr;
-      if (c<0 || r<0 || c>=COLS || r>=ROWS) continue;
-      const bk = c+','+r;
-      if (!G.pathCells.has(bk) && !G.deco.has(bk)) G.buildable.add(bk);
+      if (!dc && !dr) continue;
+      if (G.pathCells.has((c+dc)+','+(r+dr))){ n++; if (!dc || !dr) ortho = true; }
     }
+    return { n, ortho };
+  };
+  for (let c=0; c<G.cols; c++) for (let r=0; r<G.rows; r++){
+    const k = c+','+r;
+    if (G.pathCells.has(k) || G.deco.has(k)) continue;
+    const { n, ortho } = neighbours(c, r);
+    if (n >= 2 || (n >= 1 && ortho)) G.buildable.add(k);
   }
   G.core = G.paths[0][G.paths[0].length-1];
 }
@@ -64,13 +72,28 @@ function computeView(){
   V.dpr = S.lowgfx ? 1 : Math.min(window.devicePixelRatio||1, 1.5); // низкая графика = 1x, обычно — до 1.5x
   V.w = w; V.h = h;
   boardCv.width = Math.round(w*V.dpr); boardCv.height = Math.round(h*V.dpr);
-  V.cs = Math.min(w/COLS, h/ROWS);
-  V.ox = (w - V.cs*COLS)/2;
-  const slackY = h - V.cs*ROWS;
-  V.oy = slackY > V.cs*2 ? 2 : slackY/2; // портрет: поле прижато к HUD, пустота уходит к кнопке волны
+  const C = (G.active && G.cols) || COLS, R = (G.active && G.rows) || ROWS;
+  // большие карты: клетки не мельче 34px, поле панорамируется
+  V.cs = Math.max(Math.min(w/C, h/R), 34);
+  const bw = C*V.cs, bh = R*V.cs;
+  // сохраняем центр камеры при пересчёте размеров
+  let cx = (V.ox + V.w/2) / Math.max(1, bw), cy = (V.oy + V.h/2) / Math.max(1, bh);
+  V.ox = cx*bw - w/2;
+  V.oy = cy*bh - h/2;
+  if (bw <= w) V.ox = (w - bw)/2;
+  if (bh <= h) V.oy = (h - bh) > V.cs*2 ? 2 : (h - bh)/2; // портрет: поле прижато к HUD
+  clampCam(C, R);
   computePathPxs();
   renderBoardBG();
   renderGame(); // ресайз мог случиться на паузе — кадр должен остаться актуальным
+}
+/* Камера не даёт показать пустоту за пределами поля */
+function clampCam(C, R){
+  C = C || ((G.active && G.cols) || COLS);
+  R = R || ((G.active && G.rows) || ROWS);
+  const bw = C*V.cs, bh = R*V.cs;
+  V.ox = bw <= V.w ? (V.w - bw)/2 : clamp(V.ox, V.w - bw, 0);
+  V.oy = bh <= V.h ? ((V.h - bh) > V.cs*2 ? 2 : (V.h - bh)/2) : clamp(V.oy, V.h - bh, 0);
 }
 
 /* ---------- Старт/выход партии ---------- */
@@ -98,6 +121,10 @@ function startGame(mapIdx, endless){
   UI.updateHUD(true);
   UI.refreshWaveUI();
   UI.hintLogic();
+  if ((G.map.cols||12) > 12 && !S.seen.pan){
+    S.seen.pan = 1; persist();
+    UI.toast(t('pan_hint'), 'warn');
+  }
 }
 
 function exitGame(){
@@ -109,7 +136,7 @@ function exitGame(){
 
 /* ---------- Постройка/улучшение/продажа ---------- */
 function canPlace(c,r){
-  if (c<0||r<0||c>=COLS||r>=ROWS) return false;
+  if (c<0||r<0||c>=G.cols||r>=G.rows) return false;
   const k = c+','+r;
   return G.buildable.has(k) && !G.towerGrid.has(k);
 }
@@ -178,9 +205,11 @@ function sellTower(tw){
 /* ---------- Прицеливание и стрельба ---------- */
 function acquireTarget(tw, lv){
   const r2 = lv.range*lv.range;
+  const mr2 = (lv.minRange||0)*(lv.minRange||0);
   let best = null, bestKey = -Infinity;
   for (const e of EP){
     if (!e.alive || e.dead || e.phased) continue;
+    if (mr2 && dist2(tw.x, tw.y, e.x, e.y) < mr2) continue; // мортира не бьёт вплотную
     if (dist2(tw.x, tw.y, e.x, e.y) > r2) continue;
     let key;
     if (tw.mode === 'last') key = -e.dist;
@@ -234,6 +263,23 @@ function fireToxin(tw, e, lv, dmgMul){
   damage(e, 4*dmgMul, 99, true, tw.type);
   AudioSys.play('toxin');
 }
+function fireMortar(tw, e, lv, dmgMul){
+  const b = bpGet();
+  if (!b) return;
+  const dist = Math.hypot(e.x-tw.x, e.y-tw.y);
+  b.alive = true; b.arcT = 0;
+  b.T = 0.55 + dist*0.05;
+  b.sx = tw.x; b.sy = tw.y;
+  b.lx = e.x; b.ly = e.y;          // артиллерия бьёт по точке на момент выстрела
+  b.x = tw.x; b.y = tw.y; b.px = tw.x; b.py = tw.y;
+  b.dmg = lv.dmg*dmgMul; b.rad = lv.splash; b.color = TOWERS.mortar.color;
+  b.src = tw.type; b.stun = lv.stun||0; b.big = true;
+  b.H = Math.min(dist*0.45, 6);    // высота дуги в клетках
+  burst(V.ox+tw.x*V.cs, V.oy+tw.y*V.cs, b.color, 6, 120, 0.3);
+  tw.aim = Math.atan2(e.y-tw.y, e.x-tw.x);
+  AudioSys.play('missile');
+  G.shake(2);
+}
 function fireMissile(tw, e, lv, dmgMul){
   const b = bpGet();
   if (b){
@@ -247,9 +293,9 @@ function fireMissile(tw, e, lv, dmgMul){
 function explode(b){
   b.alive = false;
   const px = V.ox+b.x*V.cs, py = V.oy+b.y*V.cs;
-  burst(px,py,'#ffb020',14,190,0.45);
-  ring(px,py,b.color, b.rad*V.cs*0.2, b.rad*V.cs, 0.3, 2.5);
-  AudioSys.play('boom'); G.shake(3);
+  burst(px,py,'#ffb020', b.big ? 26 : 14, b.big ? 240 : 190, 0.45);
+  ring(px,py,b.color, b.rad*V.cs*0.2, b.rad*V.cs, 0.3, b.big ? 3.5 : 2.5);
+  AudioSys.play('boom'); G.shake(b.big ? 7 : 3);
   const r2 = b.rad*b.rad;
   for (const e of EP){
     if (!e.alive || e.dead || e.phased) continue;
@@ -257,6 +303,7 @@ function explode(b){
     if (d2 <= r2){
       const f = 1 - 0.5*Math.sqrt(d2)/b.rad;
       damage(e, b.dmg*f, 1, false, b.src);
+      if (b.stun && e.alive && !e.dead) e.stunT = Math.max(e.stunT||0, b.stun);
     }
   }
 }
@@ -395,6 +442,15 @@ function updateTowers(dt){
       }
       continue;
     }
+    if (def.kind === 'mortar'){
+      tw.cd -= dt*overMul;
+      if (tw.cd <= 0){
+        const e = acquireTarget(tw, lv);
+        if (e){ fireMortar(tw, e, lv, dmgMul*tw.amp); tw.cd = 1/lv.rate; }
+        else tw.cd = 0;
+      }
+      continue;
+    }
     if (def.kind === 'beam'){ beamTick(tw, def, lv, dt, dmgMul*tw.amp*overMul); continue; }
     tw.cd -= dt*overMul;
     if (tw.cd <= 0){
@@ -412,6 +468,24 @@ function updateTowers(dt){
 function updateBullets(dt){
   for (const b of BP){
     if (!b.alive) continue;
+    if (b.arcT !== undefined){ // дуговая ракета мортиры
+      b.arcT += dt;
+      const k = Math.min(1, b.arcT/b.T);
+      b.px = b.x; b.py = b.y;
+      b.x = lerp(b.sx, b.lx, k);
+      b.y = lerp(b.sy, b.ly, k);
+      b.h = Math.sin(Math.PI*k)*b.H;
+      if (Math.random() < 0.5){
+        const p = ppGet();
+        if (p){
+          p.alive = true; p.x = V.ox+b.x*V.cs; p.y = V.oy+(b.y-b.h*0)*V.cs - b.h*V.cs;
+          p.vx = rnd(-8,8); p.vy = rnd(-8,8);
+          p.t = 0; p.ttl = 0.3; p.color = '#ffb020'; p.size = 2; p.kind = 'spark';
+        }
+      }
+      if (k >= 1) explode(b);
+      continue;
+    }
     if (b.tgt && b.tgt.alive && !b.tgt.dead && !b.tgt.phased){ b.lx = b.tgt.x; b.ly = b.tgt.y; }
     b.px = b.x; b.py = b.y;
     const dx = b.lx-b.x, dy = b.ly-b.y, d = Math.hypot(dx,dy);
@@ -680,10 +754,10 @@ function drawBGContent(c){
   c.fillStyle = g; c.fillRect(0,0,V.w,V.h);
   // сетка
   c.strokeStyle = 'rgba(0,229,255,0.05)'; c.lineWidth = 1;
-  for (let i=0;i<=COLS;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+ROWS*V.cs); c.stroke(); }
-  for (let j=0;j<=ROWS;j++){ c.beginPath(); c.moveTo(V.ox, V.oy+j*V.cs); c.lineTo(V.ox+COLS*V.cs, V.oy+j*V.cs); c.stroke(); }
+  for (let i=0;i<=G.cols;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+G.rows*V.cs); c.stroke(); }
+  for (let j=0;j<=G.rows;j++){ c.beginPath(); c.moveTo(V.ox, V.oy+j*V.cs); c.lineTo(V.ox+G.cols*V.cs, V.oy+j*V.cs); c.stroke(); }
   c.strokeStyle = 'rgba(0,229,255,0.16)';
-  c.strokeRect(V.ox, V.oy, COLS*V.cs, ROWS*V.cs);
+  c.strokeRect(V.ox, V.oy, G.cols*V.cs, G.rows*V.cs);
   // клетки пути
   c.fillStyle = 'rgba(0,229,255,0.05)';
   for (const k of G.pathCells){
@@ -717,14 +791,36 @@ function drawBGContent(c){
       c.beginPath(); c.arc(x, y, Math.max(1.5, V.cs*0.045), 0, TAU); c.fill();
     }
   }
-  // площадки стройки: едва заметные скругления в зонах
-  c.strokeStyle = 'rgba(0,229,255,0.14)';
-  c.lineWidth = 1;
+  }
+}
+
+/* Пульсирующие площадки стройки — заметны на любом фоне */
+function drawBuildPads(ctx){
+  const pulse = 0.28 + 0.16*Math.sin(G.time*2.4);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,229,255,'+pulse.toFixed(3)+')';
+  ctx.lineWidth = 1.5;
+  const corner = Math.max(3, V.cs*0.18);
   for (const k of G.buildable){
-    const [cc,cr] = k.split(',').map(Number);
-    rr(c, V.ox+cc*V.cs+3, V.oy+cr*V.cs+3, V.cs-6, V.cs-6, 4); c.stroke();
+    if (G.towerGrid.has(k)) continue;
+    const x = V.ox + Number(k.split(',')[0])*V.cs + 3;
+    const y = V.oy + Number(k.split(',')[1])*V.cs + 3;
+    const sz = V.cs - 6;
+    rr(ctx, x, y, sz, sz, 4); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,229,255,'+(pulse*0.5).toFixed(3)+')';
+    ctx.fillRect(x+sz/2-1.5, y+sz/2-1.5, 3, 3);
+    if (!S.lowgfx){
+      ctx.strokeStyle = 'rgba(0,229,255,'+(pulse*1.4).toFixed(3)+')';
+      ctx.beginPath();
+      ctx.moveTo(x, y+corner); ctx.lineTo(x, y); ctx.lineTo(x+corner, y);
+      ctx.moveTo(x+sz-corner, y); ctx.lineTo(x+sz, y); ctx.lineTo(x+sz, y+corner);
+      ctx.moveTo(x+sz, y+sz-corner); ctx.lineTo(x+sz, y+sz); ctx.lineTo(x+sz-corner, y+sz);
+      ctx.moveTo(x+corner, y+sz); ctx.lineTo(x, y+sz); ctx.lineTo(x, y+sz-corner);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,229,255,'+pulse.toFixed(3)+')';
+    }
   }
-  }
+  ctx.restore();
 }
 
 function drawPathFlow(ctx){
@@ -900,9 +996,28 @@ function drawRange(ctx, px, py, range, color){
 }
 
 function drawBulletsFx(ctx){
+  // маркер точки прилёта мортиры
+  for (const b of BP){
+    if (!b.alive || b.arcT === undefined) continue;
+    const mx = V.ox+b.lx*V.cs, my = V.oy+b.ly*V.cs;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = b.color; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.arc(mx, my, b.rad*V.cs, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
   // ракеты
   for (const b of BP){
     if (!b.alive) continue;
+    if (b.arcT !== undefined){
+      const px = V.ox+b.x*V.cs;
+      const py = V.oy+(b.y - b.h)*V.cs; // высота дуги
+      drawGlow(ctx, px, py, 6, b.color, 0.9);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(px-2, py-2, 4, 4);
+      continue;
+    }
     const px = V.ox+b.x*V.cs, py = V.oy+b.y*V.cs;
     const qx = V.ox+b.px*V.cs, qy = V.oy+b.py*V.cs;
     ctx.strokeStyle = hexA(b.color, 0.6); ctx.lineWidth = 2;
@@ -1034,14 +1149,15 @@ function drawGhostAndSelection(ctx){
       ctx.fillText(label, px, ly+13);
     }
   }
-  if (G.placing && G.hoverCell){
+  if ((G.placing || G.dragPlacing) && G.hoverCell){
+    const placingType = G.placing || G.dragPlacing;
     const [c,r] = G.hoverCell;
-    const def = TOWERS[G.placing], lv = def.lv[0];
+    const def = TOWERS[placingType], lv = def.lv[0];
     const ok = canPlace(c,r) && G.cash >= def.cost;
     const px = V.ox+(c+0.5)*V.cs, py = V.oy+(r+0.5)*V.cs;
     drawRange(ctx, px, py, lv.range, ok ? def.color : '#ff3355');
     ctx.save(); ctx.globalAlpha = 0.6;
-    drawTowerAt(ctx, G.placing, 1, px, py, V.cs, -TAU/8, ok ? def.color : '#ff3355');
+    drawTowerAt(ctx, placingType, 1, px, py, V.cs, -TAU/8, ok ? def.color : '#ff3355');
     ctx.restore();
     if (ok){
       ctx.strokeStyle = hexA(def.color, 0.8); ctx.lineWidth = 1.5;
