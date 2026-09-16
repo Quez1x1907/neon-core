@@ -89,6 +89,13 @@ function initInput(){
   });
 
   // HUD-кнопки
+  UI.els.btnFull.addEventListener('click', ()=>{
+    AudioSys.play('click');
+    if (TG){ tgFullscreen(); }
+    else if (document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
+  });
   UI.els.btnSpeed.addEventListener('click', ()=>{
     G.speed = G.speed === 1 ? 2 : 1;
     AudioSys.play('click');

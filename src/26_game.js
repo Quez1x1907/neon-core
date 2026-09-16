@@ -1218,17 +1218,25 @@ function renderGame(){
   ctx.save();
   try{
     ctx.translate(sx, sy);
-    // фон непрозрачный, нарисован с запасом и накладывается 1:1 — сетка не плывёт.
-    // ОБЯЗАТЕЛЬНО со смещением камеры, иначе трасса остаётся на месте при панораме
-    if (boardBG) ctx.drawImage(boardBG, V.ox-24, V.oy-24, (V.w+48), (V.h+48));
-    drawPathFlow(ctx);
-    drawPortals(ctx);
-    drawCore(ctx);
-    drawBuildPads(ctx);
-    drawEnemies(ctx);
-    drawTowers(ctx);
-    drawBulletsFx(ctx);
-    drawGhostAndSelection(ctx);
+    // фон непрозрачный и обязателен: если пререндера нет — строим лениво,
+    // а на крайний случай заливаем подложку. Иначе кадры наслаиваются в артефакты.
+    if (!boardBG) renderBoardBG();
+    if (boardBG){
+      ctx.drawImage(boardBG, V.ox-24, V.oy-24, (V.w+48), (V.h+48));
+    } else {
+      ctx.fillStyle = '#05070f';
+      ctx.fillRect(-24, -24, V.w+48, V.h+48);
+    }
+    // каждая секция независимо — сбой одной не портит кадр
+    const section = (f)=>{ try{ f(ctx); }catch(e){ reportErr(e); } };
+    section(drawPathFlow);
+    section(drawPortals);
+    section(drawCore);
+    section(drawBuildPads);
+    section(drawEnemies);
+    section(drawTowers);
+    section(drawBulletsFx);
+    section(drawGhostAndSelection);
   } finally {
     ctx.restore();
   }

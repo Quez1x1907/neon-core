@@ -186,6 +186,7 @@ const ICONS = {
   star:'<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 16.9 6.1 20.2l1.3-6.6L2.5 9l6.6-.8z"/></svg>',
   pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
   home:'<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',
+  full:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   core:'<svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg>',
   dmg:'<svg viewBox="0 0 24 24"><path d="M4 20l6-6M14 4l6 6M4 4l16 16" /><path d="M4 14v6h6M20 10V4h-6"/></svg>',
   lives:'<svg viewBox="0 0 24 24"><path d="M12 21C7 16 3 12.5 3 8.5 3 6 5 4 7.5 4c1.8 0 3.4 1 4.5 2.6C13.1 5 14.7 4 16.5 4 19 4 21 6 21 8.5c0 4-4 7.5-9 12.5z"/></svg>',

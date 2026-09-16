@@ -13,8 +13,10 @@ const UI = {
       btnWave:$('btn-wave'), wavePreview:$('wave-preview'), bannerText:$('banner-text'),
       bannerSub:$('banner-sub'), hint:$('hint'), bossbar:$('bossbar'),
       bossName:$('boss-name'), bossFill:$('boss-fill'), tt:$('tt'), dragicon:$('dragicon'),
-      abEmp:$('btn-ab-emp'), abOver:$('btn-ab-over'), btnAuto:$('btn-auto'),
+      abEmp:$('btn-ab-emp'), abOver:$('btn-ab-over'), btnAuto:$('btn-auto'), btnFull:$('btn-full'),
     };
+    this.els.btnFull.innerHTML = ICONS.full;
+    this.els.btnFull.title = t('s_full');
     this.els.btnPause.innerHTML = ICONS.pause;
     this.els.btnHome.innerHTML = ICONS.home;
     this.els.abEmp.innerHTML = '<b>Q</b><span class="cdt"></span>';

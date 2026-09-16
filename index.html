@@ -473,6 +473,7 @@ h1,h2,h3{font-weight:600}
     <div class="hud-spacer"></div>
     <button class="hbtn ab" id="btn-ab-emp" title="Q"></button>
     <button class="hbtn ab" id="btn-ab-over" title="E"></button>
+    <button class="hbtn" id="btn-full"></button>
     <button class="hbtn" id="btn-speed" title="F">1×</button>
     <button class="hbtn" id="btn-auto" title="R">A</button>
     <button class="hbtn" id="btn-pause" title="Space"></button>
@@ -960,6 +961,7 @@ const ICONS = {
   star:'<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 16.9 6.1 20.2l1.3-6.6L2.5 9l6.6-.8z"/></svg>',
   pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
   home:'<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',
+  full:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   core:'<svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg>',
   dmg:'<svg viewBox="0 0 24 24"><path d="M4 20l6-6M14 4l6 6M4 4l16 16" /><path d="M4 14v6h6M20 10V4h-6"/></svg>',
   lives:'<svg viewBox="0 0 24 24"><path d="M12 21C7 16 3 12.5 3 8.5 3 6 5 4 7.5 4c1.8 0 3.4 1 4.5 2.6C13.1 5 14.7 4 16.5 4 19 4 21 6 21 8.5c0 4-4 7.5-9 12.5z"/></svg>',
@@ -1143,6 +1145,7 @@ function initTelegram(){
   try{ if (typeof TG.ready === 'function') TG.ready(); }catch(e){}
   try{ if (typeof TG.expand === 'function') TG.expand(); }catch(e){}
   try{ if (typeof TG.disableVerticalSwipes === 'function') TG.disableVerticalSwipes(); }catch(e){}
+  try{ if (typeof TG.unlockOrientation === 'function') TG.unlockOrientation(); }catch(e){} // телефон можно вертеть — мини-апп повернётся
   try{ if (typeof TG.enableClosingConfirmation === 'function') TG.enableClosingConfirmation(); }catch(e){}
   try{ if (typeof TG.setHeaderColor === 'function') TG.setHeaderColor('#05070f'); }catch(e){}
   try{ if (typeof TG.setBackgroundColor === 'function') TG.setBackgroundColor('#05070f'); }catch(e){}
@@ -1164,6 +1167,17 @@ function initTelegram(){
       });
     }
   }catch(e){}
+}
+
+/* Во весь экран: настоящий фуллскрин, если версия бота позволяет; иначе просто поворот */
+function tgFullscreen(){
+  try{
+    if (TG && typeof TG.requestFullscreen === 'function'){ TG.requestFullscreen(); return true; }
+  }catch(e){}
+  try{
+    if (TG && typeof TG.unlockOrientation === 'function'){ TG.unlockOrientation(); return true; }
+  }catch(e){}
+  return false;
 }
 
 /* Кнопка «Назад» Telegram: видна на экранах списков */
@@ -3027,17 +3041,25 @@ function renderGame(){
   ctx.save();
   try{
     ctx.translate(sx, sy);
-    // фон непрозрачный, нарисован с запасом и накладывается 1:1 — сетка не плывёт.
-    // ОБЯЗАТЕЛЬНО со смещением камеры, иначе трасса остаётся на месте при панораме
-    if (boardBG) ctx.drawImage(boardBG, V.ox-24, V.oy-24, (V.w+48), (V.h+48));
-    drawPathFlow(ctx);
-    drawPortals(ctx);
-    drawCore(ctx);
-    drawBuildPads(ctx);
-    drawEnemies(ctx);
-    drawTowers(ctx);
-    drawBulletsFx(ctx);
-    drawGhostAndSelection(ctx);
+    // фон непрозрачный и обязателен: если пререндера нет — строим лениво,
+    // а на крайний случай заливаем подложку. Иначе кадры наслаиваются в артефакты.
+    if (!boardBG) renderBoardBG();
+    if (boardBG){
+      ctx.drawImage(boardBG, V.ox-24, V.oy-24, (V.w+48), (V.h+48));
+    } else {
+      ctx.fillStyle = '#05070f';
+      ctx.fillRect(-24, -24, V.w+48, V.h+48);
+    }
+    // каждая секция независимо — сбой одной не портит кадр
+    const section = (f)=>{ try{ f(ctx); }catch(e){ reportErr(e); } };
+    section(drawPathFlow);
+    section(drawPortals);
+    section(drawCore);
+    section(drawBuildPads);
+    section(drawEnemies);
+    section(drawTowers);
+    section(drawBulletsFx);
+    section(drawGhostAndSelection);
   } finally {
     ctx.restore();
   }
@@ -3057,8 +3079,10 @@ const UI = {
       btnWave:$('btn-wave'), wavePreview:$('wave-preview'), bannerText:$('banner-text'),
       bannerSub:$('banner-sub'), hint:$('hint'), bossbar:$('bossbar'),
       bossName:$('boss-name'), bossFill:$('boss-fill'), tt:$('tt'), dragicon:$('dragicon'),
-      abEmp:$('btn-ab-emp'), abOver:$('btn-ab-over'), btnAuto:$('btn-auto'),
+      abEmp:$('btn-ab-emp'), abOver:$('btn-ab-over'), btnAuto:$('btn-auto'), btnFull:$('btn-full'),
     };
+    this.els.btnFull.innerHTML = ICONS.full;
+    this.els.btnFull.title = t('s_full');
     this.els.btnPause.innerHTML = ICONS.pause;
     this.els.btnHome.innerHTML = ICONS.home;
     this.els.abEmp.innerHTML = '<b>Q</b><span class="cdt"></span>';
@@ -3971,6 +3995,13 @@ function initInput(){
   });
 
   // HUD-кнопки
+  UI.els.btnFull.addEventListener('click', ()=>{
+    AudioSys.play('click');
+    if (TG){ tgFullscreen(); }
+    else if (document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
+  });
   UI.els.btnSpeed.addEventListener('click', ()=>{
     G.speed = G.speed === 1 ? 2 : 1;
     AudioSys.play('click');

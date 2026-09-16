@@ -26,6 +26,7 @@ function initTelegram(){
   try{ if (typeof TG.ready === 'function') TG.ready(); }catch(e){}
   try{ if (typeof TG.expand === 'function') TG.expand(); }catch(e){}
   try{ if (typeof TG.disableVerticalSwipes === 'function') TG.disableVerticalSwipes(); }catch(e){}
+  try{ if (typeof TG.unlockOrientation === 'function') TG.unlockOrientation(); }catch(e){} // телефон можно вертеть — мини-апп повернётся
   try{ if (typeof TG.enableClosingConfirmation === 'function') TG.enableClosingConfirmation(); }catch(e){}
   try{ if (typeof TG.setHeaderColor === 'function') TG.setHeaderColor('#05070f'); }catch(e){}
   try{ if (typeof TG.setBackgroundColor === 'function') TG.setBackgroundColor('#05070f'); }catch(e){}
@@ -47,6 +48,17 @@ function initTelegram(){
       });
     }
   }catch(e){}
+}
+
+/* Во весь экран: настоящий фуллскрин, если версия бота позволяет; иначе просто поворот */
+function tgFullscreen(){
+  try{
+    if (TG && typeof TG.requestFullscreen === 'function'){ TG.requestFullscreen(); return true; }
+  }catch(e){}
+  try{
+    if (TG && typeof TG.unlockOrientation === 'function'){ TG.unlockOrientation(); return true; }
+  }catch(e){}
+  return false;
 }
 
 /* Кнопка «Назад» Telegram: видна на экранах списков */
