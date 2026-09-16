@@ -81,6 +81,7 @@ const UI = {
         grid.appendChild(card);
         drawMapPreview(card.querySelector('canvas'), m);
         card.addEventListener('click', ()=>{ AudioSys.play('click'); startGame(ai, true); });
+        shownAny = true;
       }
     }
     MAPS.forEach((m,i)=>{

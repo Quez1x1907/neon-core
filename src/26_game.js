@@ -94,6 +94,7 @@ function clampCam(C, R){
   const bw = C*V.cs, bh = R*V.cs;
   V.ox = bw <= V.w ? (V.w - bw)/2 : clamp(V.ox, V.w - bw, 0);
   V.oy = bh <= V.h ? ((V.h - bh) > V.cs*2 ? 2 : (V.h - bh)/2) : clamp(V.oy, V.h - bh, 0);
+  computePathPxs(); // трасса-дэши и порталы следуют за камерой
 }
 
 /* ---------- Старт/выход партии ---------- */
@@ -1188,8 +1189,9 @@ function renderGame(){
   ctx.save();
   try{
     ctx.translate(sx, sy);
-    // фон непрозрачный, нарисован с запасом и накладывается 1:1 — сетка не плывёт
-    if (boardBG) ctx.drawImage(boardBG, -24, -24, (V.w+48), (V.h+48));
+    // фон непрозрачный, нарисован с запасом и накладывается 1:1 — сетка не плывёт.
+    // ОБЯЗАТЕЛЬНО со смещением камеры, иначе трасса остаётся на месте при панораме
+    if (boardBG) ctx.drawImage(boardBG, V.ox-24, V.oy-24, (V.w+48), (V.h+48));
     drawPathFlow(ctx);
     drawPortals(ctx);
     drawCore(ctx);
