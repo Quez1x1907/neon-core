@@ -32,10 +32,10 @@ const TOWERS = {
       a:{ key:'br_sniper_a', lv:{dmg:120, rate:0.45, range:6.5, pierce:30, up:180} },
       b:{ key:'br_sniper_b', lv:{dmg:200, rate:0.55, range:6.0, pierce:8, up:180} } } },
   bank:{ key:'tw_bank', cost:100, color:'#a8ff3e', kind:'bank',
-    lv:[{prod:2, cycle:3},{prod:3, cycle:3, up:85}],
+    lv:[{prod:2, cycle:4},{prod:3, cycle:4, up:85}],
     branches:{
-      a:{ key:'br_bank_a', lv:{prod:5, cycle:2.2, up:160} },
-      b:{ key:'br_bank_b', lv:{prod:9, cycle:3.2, up:160} } } },
+      a:{ key:'br_bank_a', lv:{prod:5, cycle:3.0, up:160} },
+      b:{ key:'br_bank_b', lv:{prod:8, cycle:4.0, up:160} } } },
   beam:{ key:'tw_beam', cost:140, color:'#ff7a2d', kind:'beam',
     lv:[{dmg:22, range:3.2, ramp:0.4},{dmg:34, range:3.4, ramp:0.5, up:110}],
     branches:{
@@ -110,7 +110,7 @@ const TECH_FLOOR  = { drone:0, sprinter:1, bit:2, tank:3, mender:4, phantom:5, a
 /* ---- Карты: waypoints в клетках, последняя точка каждой трассы — ядро.
    Дороги удлинены; стройка разрешена только в зонах рядом с трассой. ---- */
 const MAPS = [
-  { key:'map_boot', mult:1.0, need:0, color:'#00e5ff',
+  { key:'map_boot', mult:1, need:0, color:'#00e5ff',
     paths:[[[-1, 2], [7, 2], [7, 4], [2, 4], [2, 6], [9, 6]]], deco:[[4, 3], [6, 5], [5, 3]] },
   { key:'map_spiral', mult:1.12, need:3, color:'#9d5cff',
     paths:[[[-1, 1], [10, 1], [10, 7], [1, 7], [1, 3], [8, 3], [8, 5], [4, 5]]], deco:[[3, 4], [5, 4], [6, 6], [3, 6]] },
@@ -134,6 +134,13 @@ const MAPS = [
     paths:[[[-1, 1], [2, 1], [2, 3], [8, 3], [8, 1], [10, 1], [10, 4], [5, 4]],
     [[-1, 7], [2, 7], [2, 5], [8, 5], [8, 7], [10, 7], [10, 4], [5, 4]],
     [[12, 0], [9, 0], [9, 2], [11, 2], [11, 6], [3, 6], [3, 4], [5, 4]]], deco:[[4, 2], [6, 2], [7, 2], [0, 4]] },
+  { key:'map_gates', mult:1.7, need:22, color:'#ff8c00',
+    paths:[[[-1, 0], [4, 0], [4, 4], [6, 4]],
+    [[-1, 8], [4, 8], [4, 4], [6, 4]],
+    [[12, 0], [8, 0], [8, 4], [6, 4]],
+    [[12, 8], [8, 8], [8, 4], [6, 4]]], deco:[[2, 2], [9, 2], [2, 6], [9, 6]] },
+  { key:'map_mega', mult:1.9, need:25, color:'#e0e0ff',
+    paths:[[[-1, 1], [10, 1], [10, 7], [1, 7], [1, 2], [9, 2], [9, 6], [3, 6], [3, 4], [6, 4]]], deco:[[5, 3], [6, 8], [2, 4]] },
 ];
 
 /* ---- Мета-прокачка (за ядра данных) ---- */
