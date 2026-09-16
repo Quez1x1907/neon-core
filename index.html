@@ -2633,6 +2633,16 @@ function drawBGContent(c){
     c.strokeStyle = 'rgba(0,229,255,0.25)';
     for (let i=1;i<4;i++){ c.beginPath(); c.moveTo(x+w*0.15, y+h*i/4); c.lineTo(x+w*0.85, y+h*i/4); c.stroke(); }
   }
+  // маркеры зон стройки: статичный кружок с кольцом — рисуются один раз в пререндере
+  for (const k of G.buildable){
+    const [cc,cr] = k.split(',').map(Number);
+    const x = V.ox+(cc+0.5)*V.cs, y = V.oy+(cr+0.5)*V.cs;
+    c.strokeStyle = 'rgba(0,229,255,0.30)';
+    c.lineWidth = 1;
+    c.beginPath(); c.arc(x, y, V.cs*0.17, 0, TAU); c.stroke();
+    c.fillStyle = 'rgba(0,229,255,0.55)';
+    c.beginPath(); c.arc(x, y, Math.max(2, V.cs*0.055), 0, TAU); c.fill();
+  }
   // фоновые «узлы данных» на свободных клетках — детализируют поле, детерминированно по клетке
   c.fillStyle = 'rgba(0,229,255,0.10)';
   for (let cc=0; cc<COLS; cc++){
@@ -2647,34 +2657,7 @@ function drawBGContent(c){
   }
 }
 
-/* Пульсирующие площадки стройки — заметны на любом фоне */
-function drawBuildPads(ctx){
-  const pulse = 0.28 + 0.16*Math.sin(G.time*2.4);
-  ctx.save();
-  ctx.strokeStyle = 'rgba(0,229,255,'+pulse.toFixed(3)+')';
-  ctx.lineWidth = 1.5;
-  const corner = Math.max(3, V.cs*0.18);
-  for (const k of G.buildable){
-    if (G.towerGrid.has(k)) continue;
-    const x = V.ox + Number(k.split(',')[0])*V.cs + 3;
-    const y = V.oy + Number(k.split(',')[1])*V.cs + 3;
-    const sz = V.cs - 6;
-    rr(ctx, x, y, sz, sz, 4); ctx.stroke();
-    ctx.fillStyle = 'rgba(0,229,255,'+(pulse*0.5).toFixed(3)+')';
-    ctx.fillRect(x+sz/2-1.5, y+sz/2-1.5, 3, 3);
-    if (!S.lowgfx){
-      ctx.strokeStyle = 'rgba(0,229,255,'+(pulse*1.4).toFixed(3)+')';
-      ctx.beginPath();
-      ctx.moveTo(x, y+corner); ctx.lineTo(x, y); ctx.lineTo(x+corner, y);
-      ctx.moveTo(x+sz-corner, y); ctx.lineTo(x+sz, y); ctx.lineTo(x+sz, y+corner);
-      ctx.moveTo(x+sz, y+sz-corner); ctx.lineTo(x+sz, y+sz); ctx.lineTo(x+sz-corner, y+sz);
-      ctx.moveTo(x+corner, y+sz); ctx.lineTo(x, y+sz); ctx.lineTo(x, y+sz-corner);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(0,229,255,'+pulse.toFixed(3)+')';
-    }
-  }
-  ctx.restore();
-}
+/* Площадки стройки рисуются статично в пререндере фона — ноль нагрузки в бою */
 
 function drawPathFlow(ctx){
   ctx.save();
@@ -3055,7 +3038,6 @@ function renderGame(){
     section(drawPathFlow);
     section(drawPortals);
     section(drawCore);
-    section(drawBuildPads);
     section(drawEnemies);
     section(drawTowers);
     section(drawBulletsFx);
