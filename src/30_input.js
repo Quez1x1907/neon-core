@@ -203,7 +203,6 @@ function initInput(){
     }
     UI.renderShop();
   });
-  $('btn-profile').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
   $('profile-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   const bset = document.getElementById('btn-settings');
   if (bset) bset.addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
