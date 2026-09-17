@@ -3739,7 +3739,8 @@ const UI = {
   refreshWaveUI(){
     const e = this.els;
     if (G.waveState === 'running'){
-      e.btnWave.textContent = t('left_tpl', { n:G.wave, m:G.enemiesCount + G.events.length });
+      const txt = t('left_tpl', { n:G.wave, m:G.enemiesCount + G.events.length });
+      if (e.btnWave.textContent !== txt) e.btnWave.textContent = txt; // без перерисовки каждый кадр
       e.btnWave.disabled = true;
     } else {
       const n = G.wave+1;
