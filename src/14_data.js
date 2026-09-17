@@ -89,10 +89,13 @@ const MAP_SKINS = {
   classic: { key:'msk_classic', price:0,  bg:['#070b18','#05070f','#0a0f22'], grid:'rgba(0,229,255,0.05)',  border:'rgba(0,229,255,0.16)', cell:'rgba(0,229,255,0.05)',  node:'rgba(0,229,255,0.10)',  marker:'0,229,255',  decoB:'rgba(0,229,255,0.18)', decoL:'rgba(0,229,255,0.25)' },
   desert:  { key:'msk_desert',  price:60, bg:['#181008','#100b05','#221608'], grid:'rgba(255,176,32,0.06)', border:'rgba(255,176,32,0.18)', cell:'rgba(255,176,32,0.05)',  node:'rgba(255,176,32,0.10)',  marker:'255,176,32', decoB:'rgba(255,176,32,0.18)', decoL:'rgba(255,176,32,0.25)' },
   ice:     { key:'msk_ice',     price:60, bg:['#061018','#040a12','#0a1826'], grid:'rgba(160,220,255,0.06)', border:'rgba(160,220,255,0.18)', cell:'rgba(160,220,255,0.06)',  node:'rgba(160,220,255,0.10)',  marker:'160,220,255', decoB:'rgba(160,220,255,0.18)', decoL:'rgba(160,220,255,0.25)' },
+  toxic:   { key:'msk_toxic',   price:70, bg:['#081406','#040c04','#0c1a0a'], grid:'rgba(132,255,90,0.06)', border:'rgba(132,255,90,0.18)', cell:'rgba(132,255,90,0.05)', node:'rgba(132,255,90,0.10)', marker:'132,255,90', decoB:'rgba(132,255,90,0.18)', decoL:'rgba(132,255,90,0.25)' },
+  violet:  { key:'msk_violet',  price:80, bg:['#0e0618','#080410','#160a26'], grid:'rgba(190,120,255,0.06)', border:'rgba(190,120,255,0.18)', cell:'rgba(190,120,255,0.05)', node:'rgba(190,120,255,0.10)', marker:'190,120,255', decoB:'rgba(190,120,255,0.18)', decoL:'rgba(190,120,255,0.25)' },
+  mono:    { key:'msk_mono',    price:80, bg:['#101014','#0a0a0c','#18181e'], grid:'rgba(220,224,235,0.05)', border:'rgba(220,224,235,0.16)', cell:'rgba(220,224,235,0.04)', node:'rgba(220,224,235,0.08)', marker:'220,224,235', decoB:'rgba(220,224,235,0.16)', decoL:'rgba(220,224,235,0.22)' },
   blood:   { key:'msk_blood',   price:70, bg:['#160608','#0e0406','#1e0a0e'], grid:'rgba(255,51,85,0.06)',  border:'rgba(255,51,85,0.18)', cell:'rgba(255,51,85,0.05)',  node:'rgba(255,51,85,0.10)',  marker:'255,51,85',  decoB:'rgba(255,51,85,0.18)', decoL:'rgba(255,51,85,0.25)' },
 };
 
-/* Бесконечная цепочка
+/* ---- Враги ---- */
 const ENEMIES = {
   drone:   { key:'en_drone',    hp:32,  speed:1.5,  armor:0, reward:5,   leak:1,  r:.30, color:'#ff2d78', shape:'tri',  cost:1 },
   bit:     { key:'en_bit',      hp:10,  speed:2.3,  armor:0, reward:2,   leak:1,  r:.18, color:'#ff7a2d', shape:'dia',  cost:.35 },

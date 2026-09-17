@@ -798,12 +798,18 @@ const SKINS = [
   { id:'chrome',  key:'sk_chrome',  price:40 },
   { id:'neon',    key:'sk_neon',    price:50 },
   { id:'toxic',   key:'sk_toxic',   price:45 },
+  { id:'aurora',  key:'sk_aurora',  price:55 },
+  { id:'inferno', key:'sk_inferno', price:55 },
+  { id:'gold',    key:'sk_gold',    price:90 },
 ];
 const MAP_SKIN_ITEMS = [
   { id:'classic', key:'msk_classic', price:0 },
   { id:'desert',  key:'msk_desert',  price:60 },
   { id:'ice',     key:'msk_ice',     price:60 },
   { id:'blood',   key:'msk_blood',   price:70 },
+  { id:'toxic',   key:'msk_toxic',   price:70 },
+  { id:'violet',  key:'msk_violet',  price:80 },
+  { id:'mono',    key:'msk_mono',    price:80 },
 ];
 const PROMOS = { 'NEON':100, 'BOSS':250, 'MEGA':1000, 'GODMODE':5000 };
 
@@ -812,6 +818,7 @@ const FXS = [
   { id:'plasma', key:'fx_plasma', price:35 },
   { id:'snow',   key:'fx_snow',   price:25 },
   { id:'boom',   key:'fx_boom',   price:30 },
+  { id:'crt',    key:'fx_crt',    price:40 },
 ];
 
 /* Последние ошибки с этого устройства — для отчёта разработчику */

@@ -814,6 +814,9 @@ Object.assign(I18N.ru, {
   promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
   msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
   s_full:'Во весь экран', s_autolow:'Подтормаживает — включил низкую графику',
+  sk_aurora:'Аврора', sk_inferno:'Инферно', sk_gold:'Золото',
+  msk_toxic:'Токсик', msk_violet:'Аметист', msk_mono:'Монохром',
+  fx_crt:'CRT-терминал',
   s_lasterr:'Последняя ошибка:',
 });
 Object.assign(I18N.en, {
@@ -833,6 +836,9 @@ Object.assign(I18N.en, {
   promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
   msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
   s_full:'Fullscreen', s_autolow:'Running slow — enabled low graphics',
+  sk_aurora:'Aurora', sk_inferno:'Inferno', sk_gold:'Gold',
+  msk_toxic:'Toxic', msk_violet:'Amethyst', msk_mono:'Monochrome',
+  fx_crt:'CRT terminal',
   s_lasterr:'Last error:',
 });
 // LANG инициализируется в main.js после загрузки сохранения
@@ -960,10 +966,13 @@ const MAP_SKINS = {
   classic: { key:'msk_classic', price:0,  bg:['#070b18','#05070f','#0a0f22'], grid:'rgba(0,229,255,0.05)',  border:'rgba(0,229,255,0.16)', cell:'rgba(0,229,255,0.05)',  node:'rgba(0,229,255,0.10)',  marker:'0,229,255',  decoB:'rgba(0,229,255,0.18)', decoL:'rgba(0,229,255,0.25)' },
   desert:  { key:'msk_desert',  price:60, bg:['#181008','#100b05','#221608'], grid:'rgba(255,176,32,0.06)', border:'rgba(255,176,32,0.18)', cell:'rgba(255,176,32,0.05)',  node:'rgba(255,176,32,0.10)',  marker:'255,176,32', decoB:'rgba(255,176,32,0.18)', decoL:'rgba(255,176,32,0.25)' },
   ice:     { key:'msk_ice',     price:60, bg:['#061018','#040a12','#0a1826'], grid:'rgba(160,220,255,0.06)', border:'rgba(160,220,255,0.18)', cell:'rgba(160,220,255,0.06)',  node:'rgba(160,220,255,0.10)',  marker:'160,220,255', decoB:'rgba(160,220,255,0.18)', decoL:'rgba(160,220,255,0.25)' },
+  toxic:   { key:'msk_toxic',   price:70, bg:['#081406','#040c04','#0c1a0a'], grid:'rgba(132,255,90,0.06)', border:'rgba(132,255,90,0.18)', cell:'rgba(132,255,90,0.05)', node:'rgba(132,255,90,0.10)', marker:'132,255,90', decoB:'rgba(132,255,90,0.18)', decoL:'rgba(132,255,90,0.25)' },
+  violet:  { key:'msk_violet',  price:80, bg:['#0e0618','#080410','#160a26'], grid:'rgba(190,120,255,0.06)', border:'rgba(190,120,255,0.18)', cell:'rgba(190,120,255,0.05)', node:'rgba(190,120,255,0.10)', marker:'190,120,255', decoB:'rgba(190,120,255,0.18)', decoL:'rgba(190,120,255,0.25)' },
+  mono:    { key:'msk_mono',    price:80, bg:['#101014','#0a0a0c','#18181e'], grid:'rgba(220,224,235,0.05)', border:'rgba(220,224,235,0.16)', cell:'rgba(220,224,235,0.04)', node:'rgba(220,224,235,0.08)', marker:'220,224,235', decoB:'rgba(220,224,235,0.16)', decoL:'rgba(220,224,235,0.22)' },
   blood:   { key:'msk_blood',   price:70, bg:['#160608','#0e0406','#1e0a0e'], grid:'rgba(255,51,85,0.06)',  border:'rgba(255,51,85,0.18)', cell:'rgba(255,51,85,0.05)',  node:'rgba(255,51,85,0.10)',  marker:'255,51,85',  decoB:'rgba(255,51,85,0.18)', decoL:'rgba(255,51,85,0.25)' },
 };
 
-/* Бесконечная цепочка
+/* ---- Враги ---- */
 const ENEMIES = {
   drone:   { key:'en_drone',    hp:32,  speed:1.5,  armor:0, reward:5,   leak:1,  r:.30, color:'#ff2d78', shape:'tri',  cost:1 },
   bit:     { key:'en_bit',      hp:10,  speed:2.3,  armor:0, reward:2,   leak:1,  r:.18, color:'#ff7a2d', shape:'dia',  cost:.35 },
@@ -1496,6 +1505,9 @@ function towerSkin(base){
   if (sk === 'chrome') return { main:'#d7dee8', hi:'#ffffff' };
   if (sk === 'neon')   return { main:'#ff4df0', hi:'#ffd9f6' };
   if (sk === 'toxic')  return { main:'#a4ff1e', hi:'#eaffc4' };
+  if (sk === 'aurora') return { main:'#4dffd2', hi:'#eafffa' };
+  if (sk === 'inferno')return { main:'#ff7a2d', hi:'#ffe0c4' };
+  if (sk === 'gold')   return { main:'#ffd700', hi:'#fff3c4' };
   return { main: base, hi: '#ffffff' };
 }
 
@@ -2862,6 +2874,23 @@ function drawBGContent(c){
   }
 }
 
+/* CRT-сканлайны: паттерн готовится один раз, в кадре — одна заливка */
+let crtPattern = null, crtCv = null;
+function drawCRT(ctx){
+  if (!crtPattern){
+    crtCv = document.createElement('canvas');
+    crtCv.width = 4; crtCv.height = 3;
+    const cc = crtCv.getContext('2d');
+    cc.fillStyle = 'rgba(0,0,0,0.16)'; cc.fillRect(0,2,4,1);
+    cc.fillStyle = 'rgba(120,255,230,0.03)'; cc.fillRect(0,0,4,1);
+    crtPattern = ctx.createPattern(crtCv, 'repeat');
+  }
+  ctx.save();
+  ctx.fillStyle = crtPattern;
+  ctx.fillRect(0, 0, V.w, V.h);
+  ctx.restore();
+}
+
 /* Снегопад — косметический эффект (за ядра в магазине) */
 function drawSnow(ctx){
   ctx.save();
@@ -3253,6 +3282,7 @@ function renderGame(){
     section(drawTowers);
     section(drawBulletsFx);
     section(()=>{ if (S.fx && S.fx.snow && !S.lowgfx) drawSnow(ctx); });
+    section(()=>{ if (S.fx && S.fx.crt) drawCRT(ctx); });
     section(drawGhostAndSelection);
   } finally {
     ctx.restore();
@@ -4058,12 +4088,18 @@ const SKINS = [
   { id:'chrome',  key:'sk_chrome',  price:40 },
   { id:'neon',    key:'sk_neon',    price:50 },
   { id:'toxic',   key:'sk_toxic',   price:45 },
+  { id:'aurora',  key:'sk_aurora',  price:55 },
+  { id:'inferno', key:'sk_inferno', price:55 },
+  { id:'gold',    key:'sk_gold',    price:90 },
 ];
 const MAP_SKIN_ITEMS = [
   { id:'classic', key:'msk_classic', price:0 },
   { id:'desert',  key:'msk_desert',  price:60 },
   { id:'ice',     key:'msk_ice',     price:60 },
   { id:'blood',   key:'msk_blood',   price:70 },
+  { id:'toxic',   key:'msk_toxic',   price:70 },
+  { id:'violet',  key:'msk_violet',  price:80 },
+  { id:'mono',    key:'msk_mono',    price:80 },
 ];
 const PROMOS = { 'NEON':100, 'BOSS':250, 'MEGA':1000, 'GODMODE':5000 };
 
@@ -4072,6 +4108,7 @@ const FXS = [
   { id:'plasma', key:'fx_plasma', price:35 },
   { id:'snow',   key:'fx_snow',   price:25 },
   { id:'boom',   key:'fx_boom',   price:30 },
+  { id:'crt',    key:'fx_crt',    price:40 },
 ];
 
 /* Последние ошибки с этого устройства — для отчёта разработчику */

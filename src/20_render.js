@@ -160,6 +160,9 @@ function towerSkin(base){
   if (sk === 'chrome') return { main:'#d7dee8', hi:'#ffffff' };
   if (sk === 'neon')   return { main:'#ff4df0', hi:'#ffd9f6' };
   if (sk === 'toxic')  return { main:'#a4ff1e', hi:'#eaffc4' };
+  if (sk === 'aurora') return { main:'#4dffd2', hi:'#eafffa' };
+  if (sk === 'inferno')return { main:'#ff7a2d', hi:'#ffe0c4' };
+  if (sk === 'gold')   return { main:'#ffd700', hi:'#fff3c4' };
   return { main: base, hi: '#ffffff' };
 }
 

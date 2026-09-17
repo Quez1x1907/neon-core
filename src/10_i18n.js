@@ -268,6 +268,9 @@ Object.assign(I18N.ru, {
   promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
   msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
   s_full:'Во весь экран', s_autolow:'Подтормаживает — включил низкую графику',
+  sk_aurora:'Аврора', sk_inferno:'Инферно', sk_gold:'Золото',
+  msk_toxic:'Токсик', msk_violet:'Аметист', msk_mono:'Монохром',
+  fx_crt:'CRT-терминал',
   s_lasterr:'Последняя ошибка:',
 });
 Object.assign(I18N.en, {
@@ -287,6 +290,9 @@ Object.assign(I18N.en, {
   promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
   msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
   s_full:'Fullscreen', s_autolow:'Running slow — enabled low graphics',
+  sk_aurora:'Aurora', sk_inferno:'Inferno', sk_gold:'Gold',
+  msk_toxic:'Toxic', msk_violet:'Amethyst', msk_mono:'Monochrome',
+  fx_crt:'CRT terminal',
   s_lasterr:'Last error:',
 });
 // LANG инициализируется в main.js после загрузки сохранения

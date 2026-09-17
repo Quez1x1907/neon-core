@@ -834,6 +834,23 @@ function drawBGContent(c){
   }
 }
 
+/* CRT-сканлайны: паттерн готовится один раз, в кадре — одна заливка */
+let crtPattern = null, crtCv = null;
+function drawCRT(ctx){
+  if (!crtPattern){
+    crtCv = document.createElement('canvas');
+    crtCv.width = 4; crtCv.height = 3;
+    const cc = crtCv.getContext('2d');
+    cc.fillStyle = 'rgba(0,0,0,0.16)'; cc.fillRect(0,2,4,1);
+    cc.fillStyle = 'rgba(120,255,230,0.03)'; cc.fillRect(0,0,4,1);
+    crtPattern = ctx.createPattern(crtCv, 'repeat');
+  }
+  ctx.save();
+  ctx.fillStyle = crtPattern;
+  ctx.fillRect(0, 0, V.w, V.h);
+  ctx.restore();
+}
+
 /* Снегопад — косметический эффект (за ядра в магазине) */
 function drawSnow(ctx){
   ctx.save();
@@ -1225,6 +1242,7 @@ function renderGame(){
     section(drawTowers);
     section(drawBulletsFx);
     section(()=>{ if (S.fx && S.fx.snow && !S.lowgfx) drawSnow(ctx); });
+    section(()=>{ if (S.fx && S.fx.crt) drawCRT(ctx); });
     section(drawGhostAndSelection);
   } finally {
     ctx.restore();
