@@ -8,7 +8,7 @@ function defSave(){
     v:1, lang:null, sound:true, lowgfx:false, auto:false, volume:0.5, cores:0, savedAt:0,
     skin:'classic', skins:{}, fx:{}, boosts:{dmg:0, lives:0, cash:0}, mapSkin:'classic', mapSkins:{}, promoUsed:{},
     buyUnlocked:{}, lastCheckin:'', checkinDay:0,
-    meta:{ dmg:0, lives:0, cash:0, income:0 },
+    meta:{ dmg:0, lives:0, cash:0, income:0, range:0, rate:0, cores:0 },
     maps:{},            // idx → {stars, best, milestone}
     ach:{},             // id → 1
     seen:{},            // флаги "уже видел" (интро врагов, мутаций)
@@ -52,7 +52,10 @@ function unlockedTowerCount(){ return TOWER_ORDER.filter(towerUnlocked).length; 
 /* Итоговые (с учётом мета-прокачки) параметры новой партии */
 function metaVals(){
   return {
-    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.active && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
+    dmgMul: 1 + 0.06*S.meta.dmg,
+    rangeMul: 1 + 0.03*(S.meta.range||0),
+    rateMul: 1 + 0.03*(S.meta.rate||0),
+    coreMul: 1 + 0.08*(S.meta.cores||0),
     lives: START_LIVES + 2*S.meta.lives,
     cash: START_CASH + 30*S.meta.cash,
     rewardMul: 1 + 0.06*S.meta.income,

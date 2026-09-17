@@ -175,7 +175,7 @@ function initInput(){
   $('btn-settings-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
   // покупки в магазине (делегирование — список перерисовывается)
   $('shop-list').addEventListener('click', (ev)=>{
-    const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower]');
+    const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower],[data-buymapskin],[data-setmapskin]');
     if (!b) return;
     const buy = (price)=>{
       if (S.cores < price){ AudioSys.play('error'); return false; }
@@ -200,6 +200,11 @@ function initInput(){
       const tp = b.dataset.buytower;
       const price = 20 + UNLOCK_STARS[tp]*5;
       if (buy(price)){ S.buyUnlocked[tp] = 1; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.buymapskin){
+      const def = MAP_SKIN_ITEMS.find(x=>x.id===b.dataset.buymapskin);
+      if (buy(def.price)){ S.mapSkins[def.id] = 1; S.mapSkin = def.id; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.setmapskin){
+      S.mapSkin = b.dataset.setmapskin; persist(); AudioSys.play('click');
     }
     UI.renderShop();
   });

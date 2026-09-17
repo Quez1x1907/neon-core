@@ -161,6 +161,12 @@ const MAPS = [
     [[-1, 8], [4, 8], [4, 4], [6, 4]],
     [[12, 0], [8, 0], [8, 4], [6, 4]],
     [[12, 8], [8, 8], [8, 4], [6, 4]]], deco:[[2, 2], [9, 2], [2, 6], [9, 6]] },
+  { key:'map_cascade', mult:1.65, need:24, color:'#c0ff4d',
+    paths:[[[-1,0],[2,0],[2,3],[5,3],[5,0],[8,0],[8,3],[11,3],[11,6],[6,6],[6,8],[3,8]]],
+    deco:[[0,4],[7,1],[10,4],[9,8],[1,2]] },
+  { key:'map_labyrinth', mult:1.8,  need:26, color:'#8ab4ff',
+    paths:[[[-1,4],[1,4],[1,1],[4,1],[4,7],[7,7],[7,1],[10,1],[10,4],[11,4]]],
+    deco:[[2,5],[5,3],[8,3],[5,5],[8,5]] },
   { key:'map_mega', mult:1.9, need:25, color:'#e0e0ff',
     paths:[[[-1, 1], [10, 1], [10, 7], [1, 7], [1, 2], [9, 2], [9, 6], [3, 6], [3, 4], [6, 4]]], deco:[[5, 3], [6, 8], [2, 4]] },
 ];
@@ -171,6 +177,9 @@ const META = [
   { id:'lives',  max:5, cost:l=>10+l*12, eff:l=>'+'+(2*l),        icon:'lives' },
   { id:'cash',   max:5, cost:l=>12+l*14, eff:l=>'+'+(30*l)+'$',   icon:'cash' },
   { id:'income', max:5, cost:l=>12+l*14, eff:l=>'+'+(6*l)+'%',    icon:'income' },
+  { id:'range',  max:5, cost:l=>14+l*16, eff:l=>'+'+(3*l)+'%',    icon:'range' },
+  { id:'rate',   max:5, cost:l=>14+l*16, eff:l=>'+'+(3*l)+'%',    icon:'rate' },
+  { id:'cores',  max:5, cost:l=>15+l*15, eff:l=>'+'+(8*l)+'%',    icon:'cores' },
 ];
 
 /* ---- Достижения: test по статистике, prog для полосок прогресса ---- */
@@ -208,4 +217,6 @@ const ICONS = {
   lives:'<svg viewBox="0 0 24 24"><path d="M12 21C7 16 3 12.5 3 8.5 3 6 5 4 7.5 4c1.8 0 3.4 1 4.5 2.6C13.1 5 14.7 4 16.5 4 19 4 21 6 21 8.5c0 4-4 7.5-9 12.5z"/></svg>',
   cash:'<svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
   income:'<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 6-8 3 3"/><path d="M17 6h4v4"/></svg>',
+  range:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>',
+  rate:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
 };

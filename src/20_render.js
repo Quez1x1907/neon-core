@@ -58,17 +58,31 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
   const dot = (r)=>{ ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fillStyle = color; ctx.fill(); };
   ctx.beginPath();
   switch(shape){
-    case 'tri': // дрон: стрелка с ядром
+    case 'tri': // дрон: стрела с ядром, антенной и стабилизаторами
       ctx.moveTo(Math.cos(ang)*R, Math.sin(ang)*R);
       ctx.lineTo(Math.cos(ang+2.5)*R, Math.sin(ang+2.5)*R);
       ctx.lineTo(Math.cos(ang-2.5)*R, Math.sin(ang-2.5)*R);
       ctx.closePath(); fill();
-      ctx.save(); ctx.rotate(ang); dot(R*0.22); ctx.restore();
+      ctx.save(); ctx.rotate(ang);
+      dot(R*0.2);
+      ctx.beginPath(); ctx.moveTo(-R*0.85, 0); ctx.lineTo(-R*1.35, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-R*1.35, 0, R*0.12, 0, TAU); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(2.5)*R*0.9, Math.sin(2.5)*R*0.9);
+      ctx.lineTo(Math.cos(2.9)*R*1.25, Math.sin(2.9)*R*1.25);
+      ctx.moveTo(Math.cos(-2.5)*R*0.9, Math.sin(-2.5)*R*0.9);
+      ctx.lineTo(Math.cos(-2.9)*R*1.25, Math.sin(-2.9)*R*1.25);
+      ctx.stroke();
+      ctx.restore();
       break;
-    case 'dia': // бит: вращающийся ромбик
+    case 'dia': // бит: вращающийся ромб с внутренним ядром-искрой
       ctx.rotate(t*2.4);
       ctx.moveTo(0,-R); ctx.lineTo(R,0); ctx.lineTo(0,R); ctx.lineTo(-R,0);
       ctx.closePath(); fill();
+      ctx.beginPath();
+      ctx.moveTo(0,-R*0.45); ctx.lineTo(R*0.45,0); ctx.lineTo(0,R*0.45); ctx.lineTo(-R*0.45,0);
+      ctx.closePath(); ctx.stroke();
+      dot(R*0.12);
       break;
     case 'dart': // спринтер: острый дротик со шлейфом скорости
       ctx.moveTo(Math.cos(ang)*R*1.3, Math.sin(ang)*R*1.3);
@@ -80,19 +94,26 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
       ctx.globalAlpha *= 0.55;
       ctx.beginPath();
       ctx.moveTo(-R*1.1, -R*0.3); ctx.lineTo(-R*(1.6+0.25*Math.sin(t*9)), -R*0.3);
-      ctx.moveTo(-R*1.1,  R*0.3); ctx.lineTo(-R*(1.6+0.25*Math.cos(t*9)), R*0.3);
+      ctx.moveTo(-R*1.1,  R*0.3); ctx.lineTo(-R*(1.6+0.25*Math.cos(t*9)),  R*0.3);
       ctx.stroke(); ctx.restore();
       break;
-    case 'hex': // броневик: шестигранник с пластинами
+    case 'hex': // броневик: корпус, гусеницы, башня со стволом
+      ctx.save(); ctx.rotate(ang);
+      ctx.lineWidth = lw*1.6;
+      ctx.beginPath();
+      ctx.moveTo(-R*0.7,-R*0.95); ctx.lineTo(R*0.7,-R*0.95);
+      ctx.moveTo(-R*0.7, R*0.95); ctx.lineTo(R*0.7, R*0.95);
+      ctx.stroke();
+      ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(R*0.35,0); ctx.lineTo(R*1.15,0); ctx.stroke();
+      ctx.restore();
       for (let i=0;i<6;i++){ const a=ang+i*TAU/6; i?ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R):ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R); }
       ctx.closePath(); fill();
       ctx.save(); ctx.rotate(-ang*0.7 + t*0.2);
       ctx.beginPath();
       for (let i=0;i<6;i++){ const a=i*TAU/6; i?ctx.lineTo(Math.cos(a)*R*0.55,Math.sin(a)*R*0.55):ctx.moveTo(Math.cos(a)*R*0.55,Math.sin(a)*R*0.55); }
       ctx.closePath(); ctx.stroke();
-      ctx.beginPath();
-      for (let i=0;i<3;i++){ const a=i*TAU/3; ctx.moveTo(Math.cos(a)*R*0.55, Math.sin(a)*R*0.55); ctx.lineTo(Math.cos(a)*R*0.95, Math.sin(a)*R*0.95); }
-      ctx.stroke(); ctx.restore();
+      ctx.restore();
       break;
     case 'plus': { // медик: крест с пульсирующим ореолом лечения
       const p = R*0.38;
@@ -100,33 +121,43 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
       ctx.lineTo(R,-p); ctx.lineTo(R,p); ctx.lineTo(p,p); ctx.lineTo(p,R); ctx.lineTo(-p,R);
       ctx.lineTo(-p,p); ctx.lineTo(-R,p);
       ctx.closePath(); fill();
+      dot(R*0.16);
       ctx.globalAlpha *= 0.5;
       ctx.beginPath(); ctx.arc(0, 0, R*(1.25+0.18*Math.sin(t*4)), 0, TAU); ctx.stroke();
       break;
     }
-    case 'blob': // фантом: капля с «хвостами», дрожит
+    case 'blob': // фантом: капля с рваным хвостом и глазами-щелями по ходу
       ctx.save(); ctx.rotate(Math.sin(t*5)*0.15);
       ctx.arc(0, 0, R*0.85, 0, TAU);
       ctx.moveTo(R*0.5,-R*0.5); ctx.lineTo(R*0.95,-R*0.95);
       ctx.moveTo(-R*0.5,-R*0.5); ctx.lineTo(-R*0.95,-R*0.95);
       ctx.moveTo(-R*0.85,0); ctx.lineTo(-R*1.2, -R*0.35); ctx.moveTo(-R*0.85,0); ctx.lineTo(-R*1.2, R*0.35);
       fill();
+      ctx.save(); ctx.rotate(ang);
+      ctx.lineWidth = lw*1.4;
+      ctx.beginPath();
+      ctx.moveTo(R*0.12, -R*0.28); ctx.lineTo(R*0.45, -R*0.12);
+      ctx.moveTo(R*0.12,  R*0.28); ctx.lineTo(R*0.45,  R*0.12);
+      ctx.stroke();
+      ctx.restore();
       ctx.restore();
       break;
-    case 'shield': { // эгида: ядро-квадрат + вращающаяся дуга щита
+    case 'shield': { // эгида: ядро-квадрат + сегментированный вращающийся щит
       ctx.rect(-R*0.6,-R*0.6,R*1.2,R*1.2); fill();
       dot(R*0.18);
       const a0 = t*2;
-      ctx.beginPath(); ctx.arc(0, 0, R*1.35, a0, a0+TAU*0.6); ctx.stroke();
+      for (let k=0;k<3;k++){
+        ctx.beginPath(); ctx.arc(0, 0, R*1.35, a0+k*TAU/3, a0+k*TAU/3+TAU*0.22); ctx.stroke();
+      }
       break;
     }
-    case 'split': { // делитель: клетка с двумя ядрами, готова разделиться
-      ctx.save(); ctx.rotate(Math.sin(t*4)*0.12);
-      ctx.beginPath(); ctx.arc(0, 0, R*0.85, 0, TAU); fill();
-      ctx.beginPath(); ctx.moveTo(0, -R*0.85); ctx.lineTo(0, R*0.85); ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(-R*0.32, 0, R*0.2, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(R*0.32, 0, R*0.2, 0, TAU); ctx.fill();
+    case 'split': { // делитель: две делящиеся половины с пульсирующим зазором
+      ctx.save();
+      const gap = 0.16 + 0.14*Math.abs(Math.sin(t*3));
+      ctx.rotate(Math.sin(t*4)*0.1);
+      ctx.beginPath(); ctx.arc(-R*gap, 0, R*(0.8-gap*0.5), 0, TAU); fill();
+      ctx.beginPath(); ctx.arc(R*gap, 0, R*(0.8-gap*0.5), 0, TAU); fill();
+      dot(R*0.14);
       ctx.restore();
       break;
     }

@@ -205,7 +205,8 @@ function sellTower(tw){
 
 /* ---------- Прицеливание и стрельба ---------- */
 function acquireTarget(tw, lv){
-  const r2 = lv.range*lv.range;
+  const R = lv.range*metaVals().rangeMul;
+  const r2 = R*R;
   const mr2 = (lv.minRange||0)*(lv.minRange||0);
   let best = null, bestKey = -Infinity;
   for (const e of EP){
@@ -427,7 +428,8 @@ function updateTowers(dt){
       continue;
     }
     if (def.kind === 'cryo'){
-      const r2 = lv.range*lv.range;
+      const CR = lv.range*metaVals().rangeMul;
+      const r2 = CR*CR;
       for (const e of EP){
         if (!e.alive || e.dead) continue;
         if (dist2(tw.x, tw.y, e.x, e.y) > r2) continue;
@@ -440,7 +442,7 @@ function updateTowers(dt){
       tw.cd -= dt*overMul;
       if (tw.cd <= 0){
         const e = acquireTarget(tw, lv);
-        if (e){ fireToxin(tw, e, lv, dmgMul); tw.cd = 1/lv.rate; }
+        if (e){ fireToxin(tw, e, lv, dmgMul); tw.cd = 1/(lv.rate*metaVals().rateMul); }
         else tw.cd = 0;
       }
       continue;
@@ -449,7 +451,7 @@ function updateTowers(dt){
       tw.cd -= dt*overMul;
       if (tw.cd <= 0){
         const e = acquireTarget(tw, lv);
-        if (e){ fireMortar(tw, e, lv, dmgMul*tw.amp); tw.cd = 1/lv.rate; }
+        if (e){ fireMortar(tw, e, lv, dmgMul*tw.amp); tw.cd = 1/(lv.rate*metaVals().rateMul); }
         else tw.cd = 0;
       }
       continue;
@@ -462,7 +464,7 @@ function updateTowers(dt){
         if (def.kind === 'tesla') fireTesla(tw, e, lv, dmgMul*tw.amp);
         else if (def.kind === 'missile') fireMissile(tw, e, lv, dmgMul*tw.amp);
         else fireHitscan(tw, e, def, lv, dmgMul*tw.amp);
-        tw.cd = 1/lv.rate;
+        tw.cd = 1/(lv.rate*metaVals().rateMul);
       } else tw.cd = 0;
     }
   }
@@ -570,7 +572,7 @@ function waveClearInner(){
     const mile = Math.floor(G.wave/10);
     if (mile > Math.floor(ms.milestone/10)){
       const k = mile - Math.floor(ms.milestone/10);
-      addCores(k*5);
+      addCores(Math.round(k*5*metaVals().coreMul));
       ms.milestone = mile*10;
       UI.toast(t('t_core', { n:k*5 }));
     }
@@ -599,7 +601,7 @@ function victory(){
     const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
     const firstWin = ms.stars === 0;
     S.stats.wins = (S.stats.wins||0) + 1;
-    const earned = (firstWin ? 8 + 2*G.mapIdx : 3) + Math.max(0, stars - ms.stars)*3;
+    const earned = Math.round(((firstWin ? 8 + 2*G.mapIdx : 3) + Math.max(0, stars - ms.stars)*3) * metaVals().coreMul);
     ms.stars = Math.max(ms.stars, stars);
     if (earned > 0) addCores(earned);
     // что разблокировалось
@@ -1248,3 +1250,4 @@ function renderGame(){
     ctx.restore();
   }
 }
+

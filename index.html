@@ -569,7 +569,7 @@ ru: {
   hello_tpl:'Привет, {n}',
   select_map:'Выбор карты', stars_total:'звёзд', need_stars:'Нужно {n}★',
   endless_best:'∞ рекорд: волна {n}', endless_locked:'∞ — после победы',
-  endless:'Бесконечный', diff:['Прогрев','Норма','Риск','Опасно','Жёстко','Критично','Легенда','Хаос','Кошмар','Апокалипсис'],
+  endless:'Бесконечный', diff:['Прогрев','Норма','Риск','Опасно','Жёстко','Критично','Легенда','Хаос','Кошмар','Апокалипсис','Бездна','Вечность'],
   map_boot:'Загрузочный сектор', map_spiral:'Спираль', map_fork:'Развилка',
   map_serpent:'Змейка', map_vortex:'Воронка', map_siege:'Осада', map_bastion:'Бастион',
   map_trinity:'Тринити', map_gates:'Четыре врат', map_mega:'Мегаспираль',
@@ -693,7 +693,7 @@ en: {
   hello_tpl:'Hi, {n}',
   select_map:'Select map', stars_total:'stars', need_stars:'Requires {n}★',
   endless_best:'∞ record: wave {n}', endless_locked:'∞ — after victory',
-  endless:'Endless', diff:['Warmup','Normal','Risky','Danger','Tough','Critical','Legend','Chaos','Nightmare','Apocalypse'],
+  endless:'Endless', diff:['Warmup','Normal','Risky','Danger','Tough','Critical','Legend','Chaos','Nightmare','Apocalypse','Abyss','Eternity'],
   map_boot:'Boot Sector', map_spiral:'Spiral', map_fork:'Fork',
   map_serpent:'Serpent', map_vortex:'Vortex', map_siege:'Siege', map_bastion:'Bastion',
   map_trinity:'Trinity', map_gates:'Four Gates', map_mega:'Megaspiral',
@@ -817,6 +817,10 @@ Object.assign(I18N.ru, {
   promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
   msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
   s_full:'Во весь экран', s_autolow:'Подтормаживает — включил низкую графику',
+  map_arena:'Особое поле',
+  meta_range:'Оптика', meta_range_d:'Радиус всех башен: <b>+{n}%</b>',
+  meta_rate:'Форсаж', meta_rate_d:'Темп стрельбы всех башен: <b>+{n}%</b>',
+  meta_cores:'Сборщик ядер', meta_cores_d:'Ядра за победы и цепочку: <b>+{n}%</b>',
   sk_aurora:'Аврора', sk_inferno:'Инферно', sk_gold:'Золото',
   msk_toxic:'Токсик', msk_violet:'Аметист', msk_mono:'Монохром',
   fx_crt:'CRT-терминал',
@@ -839,6 +843,10 @@ Object.assign(I18N.en, {
   promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
   msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
   s_full:'Fullscreen', s_autolow:'Running slow — enabled low graphics',
+  map_arena:'Arena',
+  meta_range:'Optics', meta_range_d:'Range of all towers: <b>+{n}%</b>',
+  meta_rate:'Overclock', meta_rate_d:'Fire rate of all towers: <b>+{n}%</b>',
+  meta_cores:'Core harvester', meta_cores_d:'Cores from wins & chain: <b>+{n}%</b>',
   sk_aurora:'Aurora', sk_inferno:'Inferno', sk_gold:'Gold',
   msk_toxic:'Toxic', msk_violet:'Amethyst', msk_mono:'Monochrome',
   fx_crt:'CRT terminal',
@@ -1041,6 +1049,12 @@ const MAPS = [
     [[-1, 8], [4, 8], [4, 4], [6, 4]],
     [[12, 0], [8, 0], [8, 4], [6, 4]],
     [[12, 8], [8, 8], [8, 4], [6, 4]]], deco:[[2, 2], [9, 2], [2, 6], [9, 6]] },
+  { key:'map_cascade', mult:1.65, need:24, color:'#c0ff4d',
+    paths:[[[-1,0],[2,0],[2,3],[5,3],[5,0],[8,0],[8,3],[11,3],[11,6],[6,6],[6,8],[3,8]]],
+    deco:[[0,4],[7,1],[10,4],[9,8],[1,2]] },
+  { key:'map_labyrinth', mult:1.8,  need:26, color:'#8ab4ff',
+    paths:[[[-1,4],[1,4],[1,1],[4,1],[4,7],[7,7],[7,1],[10,1],[10,4],[11,4]]],
+    deco:[[2,5],[5,3],[8,3],[5,5],[8,5]] },
   { key:'map_mega', mult:1.9, need:25, color:'#e0e0ff',
     paths:[[[-1, 1], [10, 1], [10, 7], [1, 7], [1, 2], [9, 2], [9, 6], [3, 6], [3, 4], [6, 4]]], deco:[[5, 3], [6, 8], [2, 4]] },
 ];
@@ -1051,6 +1065,9 @@ const META = [
   { id:'lives',  max:5, cost:l=>10+l*12, eff:l=>'+'+(2*l),        icon:'lives' },
   { id:'cash',   max:5, cost:l=>12+l*14, eff:l=>'+'+(30*l)+'$',   icon:'cash' },
   { id:'income', max:5, cost:l=>12+l*14, eff:l=>'+'+(6*l)+'%',    icon:'income' },
+  { id:'range',  max:5, cost:l=>14+l*16, eff:l=>'+'+(3*l)+'%',    icon:'range' },
+  { id:'rate',   max:5, cost:l=>14+l*16, eff:l=>'+'+(3*l)+'%',    icon:'rate' },
+  { id:'cores',  max:5, cost:l=>15+l*15, eff:l=>'+'+(8*l)+'%',    icon:'cores' },
 ];
 
 /* ---- Достижения: test по статистике, prog для полосок прогресса ---- */
@@ -1088,6 +1105,8 @@ const ICONS = {
   lives:'<svg viewBox="0 0 24 24"><path d="M12 21C7 16 3 12.5 3 8.5 3 6 5 4 7.5 4c1.8 0 3.4 1 4.5 2.6C13.1 5 14.7 4 16.5 4 19 4 21 6 21 8.5c0 4-4 7.5-9 12.5z"/></svg>',
   cash:'<svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
   income:'<svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 6-8 3 3"/><path d="M17 6h4v4"/></svg>',
+  range:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>',
+  rate:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
 };
 /* ==================== Сохранения (localStorage + мягкая деградация) ====================
    Ключ сейва привязан к пользователю Telegram (SAVE_KEY = neoncore_v1_u<id>),
@@ -1099,7 +1118,7 @@ function defSave(){
     v:1, lang:null, sound:true, lowgfx:false, auto:false, volume:0.5, cores:0, savedAt:0,
     skin:'classic', skins:{}, fx:{}, boosts:{dmg:0, lives:0, cash:0}, mapSkin:'classic', mapSkins:{}, promoUsed:{},
     buyUnlocked:{}, lastCheckin:'', checkinDay:0,
-    meta:{ dmg:0, lives:0, cash:0, income:0 },
+    meta:{ dmg:0, lives:0, cash:0, income:0, range:0, rate:0, cores:0 },
     maps:{},            // idx → {stars, best, milestone}
     ach:{},             // id → 1
     seen:{},            // флаги "уже видел" (интро врагов, мутаций)
@@ -1143,7 +1162,10 @@ function unlockedTowerCount(){ return TOWER_ORDER.filter(towerUnlocked).length; 
 /* Итоговые (с учётом мета-прокачки) параметры новой партии */
 function metaVals(){
   return {
-    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.active && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
+    dmgMul: 1 + 0.06*S.meta.dmg,
+    rangeMul: 1 + 0.03*(S.meta.range||0),
+    rateMul: 1 + 0.03*(S.meta.rate||0),
+    coreMul: 1 + 0.08*(S.meta.cores||0),
     lives: START_LIVES + 2*S.meta.lives,
     cash: START_CASH + 30*S.meta.cash,
     rewardMul: 1 + 0.06*S.meta.income,
@@ -1406,17 +1428,31 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
   const dot = (r)=>{ ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fillStyle = color; ctx.fill(); };
   ctx.beginPath();
   switch(shape){
-    case 'tri': // дрон: стрелка с ядром
+    case 'tri': // дрон: стрела с ядром, антенной и стабилизаторами
       ctx.moveTo(Math.cos(ang)*R, Math.sin(ang)*R);
       ctx.lineTo(Math.cos(ang+2.5)*R, Math.sin(ang+2.5)*R);
       ctx.lineTo(Math.cos(ang-2.5)*R, Math.sin(ang-2.5)*R);
       ctx.closePath(); fill();
-      ctx.save(); ctx.rotate(ang); dot(R*0.22); ctx.restore();
+      ctx.save(); ctx.rotate(ang);
+      dot(R*0.2);
+      ctx.beginPath(); ctx.moveTo(-R*0.85, 0); ctx.lineTo(-R*1.35, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-R*1.35, 0, R*0.12, 0, TAU); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(2.5)*R*0.9, Math.sin(2.5)*R*0.9);
+      ctx.lineTo(Math.cos(2.9)*R*1.25, Math.sin(2.9)*R*1.25);
+      ctx.moveTo(Math.cos(-2.5)*R*0.9, Math.sin(-2.5)*R*0.9);
+      ctx.lineTo(Math.cos(-2.9)*R*1.25, Math.sin(-2.9)*R*1.25);
+      ctx.stroke();
+      ctx.restore();
       break;
-    case 'dia': // бит: вращающийся ромбик
+    case 'dia': // бит: вращающийся ромб с внутренним ядром-искрой
       ctx.rotate(t*2.4);
       ctx.moveTo(0,-R); ctx.lineTo(R,0); ctx.lineTo(0,R); ctx.lineTo(-R,0);
       ctx.closePath(); fill();
+      ctx.beginPath();
+      ctx.moveTo(0,-R*0.45); ctx.lineTo(R*0.45,0); ctx.lineTo(0,R*0.45); ctx.lineTo(-R*0.45,0);
+      ctx.closePath(); ctx.stroke();
+      dot(R*0.12);
       break;
     case 'dart': // спринтер: острый дротик со шлейфом скорости
       ctx.moveTo(Math.cos(ang)*R*1.3, Math.sin(ang)*R*1.3);
@@ -1428,19 +1464,26 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
       ctx.globalAlpha *= 0.55;
       ctx.beginPath();
       ctx.moveTo(-R*1.1, -R*0.3); ctx.lineTo(-R*(1.6+0.25*Math.sin(t*9)), -R*0.3);
-      ctx.moveTo(-R*1.1,  R*0.3); ctx.lineTo(-R*(1.6+0.25*Math.cos(t*9)), R*0.3);
+      ctx.moveTo(-R*1.1,  R*0.3); ctx.lineTo(-R*(1.6+0.25*Math.cos(t*9)),  R*0.3);
       ctx.stroke(); ctx.restore();
       break;
-    case 'hex': // броневик: шестигранник с пластинами
+    case 'hex': // броневик: корпус, гусеницы, башня со стволом
+      ctx.save(); ctx.rotate(ang);
+      ctx.lineWidth = lw*1.6;
+      ctx.beginPath();
+      ctx.moveTo(-R*0.7,-R*0.95); ctx.lineTo(R*0.7,-R*0.95);
+      ctx.moveTo(-R*0.7, R*0.95); ctx.lineTo(R*0.7, R*0.95);
+      ctx.stroke();
+      ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(R*0.35,0); ctx.lineTo(R*1.15,0); ctx.stroke();
+      ctx.restore();
       for (let i=0;i<6;i++){ const a=ang+i*TAU/6; i?ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R):ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R); }
       ctx.closePath(); fill();
       ctx.save(); ctx.rotate(-ang*0.7 + t*0.2);
       ctx.beginPath();
       for (let i=0;i<6;i++){ const a=i*TAU/6; i?ctx.lineTo(Math.cos(a)*R*0.55,Math.sin(a)*R*0.55):ctx.moveTo(Math.cos(a)*R*0.55,Math.sin(a)*R*0.55); }
       ctx.closePath(); ctx.stroke();
-      ctx.beginPath();
-      for (let i=0;i<3;i++){ const a=i*TAU/3; ctx.moveTo(Math.cos(a)*R*0.55, Math.sin(a)*R*0.55); ctx.lineTo(Math.cos(a)*R*0.95, Math.sin(a)*R*0.95); }
-      ctx.stroke(); ctx.restore();
+      ctx.restore();
       break;
     case 'plus': { // медик: крест с пульсирующим ореолом лечения
       const p = R*0.38;
@@ -1448,33 +1491,43 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
       ctx.lineTo(R,-p); ctx.lineTo(R,p); ctx.lineTo(p,p); ctx.lineTo(p,R); ctx.lineTo(-p,R);
       ctx.lineTo(-p,p); ctx.lineTo(-R,p);
       ctx.closePath(); fill();
+      dot(R*0.16);
       ctx.globalAlpha *= 0.5;
       ctx.beginPath(); ctx.arc(0, 0, R*(1.25+0.18*Math.sin(t*4)), 0, TAU); ctx.stroke();
       break;
     }
-    case 'blob': // фантом: капля с «хвостами», дрожит
+    case 'blob': // фантом: капля с рваным хвостом и глазами-щелями по ходу
       ctx.save(); ctx.rotate(Math.sin(t*5)*0.15);
       ctx.arc(0, 0, R*0.85, 0, TAU);
       ctx.moveTo(R*0.5,-R*0.5); ctx.lineTo(R*0.95,-R*0.95);
       ctx.moveTo(-R*0.5,-R*0.5); ctx.lineTo(-R*0.95,-R*0.95);
       ctx.moveTo(-R*0.85,0); ctx.lineTo(-R*1.2, -R*0.35); ctx.moveTo(-R*0.85,0); ctx.lineTo(-R*1.2, R*0.35);
       fill();
+      ctx.save(); ctx.rotate(ang);
+      ctx.lineWidth = lw*1.4;
+      ctx.beginPath();
+      ctx.moveTo(R*0.12, -R*0.28); ctx.lineTo(R*0.45, -R*0.12);
+      ctx.moveTo(R*0.12,  R*0.28); ctx.lineTo(R*0.45,  R*0.12);
+      ctx.stroke();
+      ctx.restore();
       ctx.restore();
       break;
-    case 'shield': { // эгида: ядро-квадрат + вращающаяся дуга щита
+    case 'shield': { // эгида: ядро-квадрат + сегментированный вращающийся щит
       ctx.rect(-R*0.6,-R*0.6,R*1.2,R*1.2); fill();
       dot(R*0.18);
       const a0 = t*2;
-      ctx.beginPath(); ctx.arc(0, 0, R*1.35, a0, a0+TAU*0.6); ctx.stroke();
+      for (let k=0;k<3;k++){
+        ctx.beginPath(); ctx.arc(0, 0, R*1.35, a0+k*TAU/3, a0+k*TAU/3+TAU*0.22); ctx.stroke();
+      }
       break;
     }
-    case 'split': { // делитель: клетка с двумя ядрами, готова разделиться
-      ctx.save(); ctx.rotate(Math.sin(t*4)*0.12);
-      ctx.beginPath(); ctx.arc(0, 0, R*0.85, 0, TAU); fill();
-      ctx.beginPath(); ctx.moveTo(0, -R*0.85); ctx.lineTo(0, R*0.85); ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(-R*0.32, 0, R*0.2, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(R*0.32, 0, R*0.2, 0, TAU); ctx.fill();
+    case 'split': { // делитель: две делящиеся половины с пульсирующим зазором
+      ctx.save();
+      const gap = 0.16 + 0.14*Math.abs(Math.sin(t*3));
+      ctx.rotate(Math.sin(t*4)*0.1);
+      ctx.beginPath(); ctx.arc(-R*gap, 0, R*(0.8-gap*0.5), 0, TAU); fill();
+      ctx.beginPath(); ctx.arc(R*gap, 0, R*(0.8-gap*0.5), 0, TAU); fill();
+      dot(R*0.14);
       ctx.restore();
       break;
     }
@@ -2248,7 +2301,8 @@ function sellTower(tw){
 
 /* ---------- Прицеливание и стрельба ---------- */
 function acquireTarget(tw, lv){
-  const r2 = lv.range*lv.range;
+  const R = lv.range*metaVals().rangeMul;
+  const r2 = R*R;
   const mr2 = (lv.minRange||0)*(lv.minRange||0);
   let best = null, bestKey = -Infinity;
   for (const e of EP){
@@ -2470,7 +2524,8 @@ function updateTowers(dt){
       continue;
     }
     if (def.kind === 'cryo'){
-      const r2 = lv.range*lv.range;
+      const CR = lv.range*metaVals().rangeMul;
+      const r2 = CR*CR;
       for (const e of EP){
         if (!e.alive || e.dead) continue;
         if (dist2(tw.x, tw.y, e.x, e.y) > r2) continue;
@@ -2483,7 +2538,7 @@ function updateTowers(dt){
       tw.cd -= dt*overMul;
       if (tw.cd <= 0){
         const e = acquireTarget(tw, lv);
-        if (e){ fireToxin(tw, e, lv, dmgMul); tw.cd = 1/lv.rate; }
+        if (e){ fireToxin(tw, e, lv, dmgMul); tw.cd = 1/(lv.rate*metaVals().rateMul); }
         else tw.cd = 0;
       }
       continue;
@@ -2492,7 +2547,7 @@ function updateTowers(dt){
       tw.cd -= dt*overMul;
       if (tw.cd <= 0){
         const e = acquireTarget(tw, lv);
-        if (e){ fireMortar(tw, e, lv, dmgMul*tw.amp); tw.cd = 1/lv.rate; }
+        if (e){ fireMortar(tw, e, lv, dmgMul*tw.amp); tw.cd = 1/(lv.rate*metaVals().rateMul); }
         else tw.cd = 0;
       }
       continue;
@@ -2505,7 +2560,7 @@ function updateTowers(dt){
         if (def.kind === 'tesla') fireTesla(tw, e, lv, dmgMul*tw.amp);
         else if (def.kind === 'missile') fireMissile(tw, e, lv, dmgMul*tw.amp);
         else fireHitscan(tw, e, def, lv, dmgMul*tw.amp);
-        tw.cd = 1/lv.rate;
+        tw.cd = 1/(lv.rate*metaVals().rateMul);
       } else tw.cd = 0;
     }
   }
@@ -2613,7 +2668,7 @@ function waveClearInner(){
     const mile = Math.floor(G.wave/10);
     if (mile > Math.floor(ms.milestone/10)){
       const k = mile - Math.floor(ms.milestone/10);
-      addCores(k*5);
+      addCores(Math.round(k*5*metaVals().coreMul));
       ms.milestone = mile*10;
       UI.toast(t('t_core', { n:k*5 }));
     }
@@ -2642,7 +2697,7 @@ function victory(){
     const stars = lost === 0 ? 3 : (lost <= 4 ? 2 : 1);
     const firstWin = ms.stars === 0;
     S.stats.wins = (S.stats.wins||0) + 1;
-    const earned = (firstWin ? 8 + 2*G.mapIdx : 3) + Math.max(0, stars - ms.stars)*3;
+    const earned = Math.round(((firstWin ? 8 + 2*G.mapIdx : 3) + Math.max(0, stars - ms.stars)*3) * metaVals().coreMul);
     ms.stars = Math.max(ms.stars, stars);
     if (earned > 0) addCores(earned);
     // что разблокировалось
@@ -3291,6 +3346,7 @@ function renderGame(){
     ctx.restore();
   }
 }
+
 /* ==================== UI: экраны, HUD, модалки, тосты ==================== */
 
 const UI = {
@@ -4498,7 +4554,7 @@ function initInput(){
   $('btn-settings-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
   // покупки в магазине (делегирование — список перерисовывается)
   $('shop-list').addEventListener('click', (ev)=>{
-    const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower]');
+    const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower],[data-buymapskin],[data-setmapskin]');
     if (!b) return;
     const buy = (price)=>{
       if (S.cores < price){ AudioSys.play('error'); return false; }
@@ -4523,6 +4579,11 @@ function initInput(){
       const tp = b.dataset.buytower;
       const price = 20 + UNLOCK_STARS[tp]*5;
       if (buy(price)){ S.buyUnlocked[tp] = 1; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.buymapskin){
+      const def = MAP_SKIN_ITEMS.find(x=>x.id===b.dataset.buymapskin);
+      if (buy(def.price)){ S.mapSkins[def.id] = 1; S.mapSkin = def.id; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.setmapskin){
+      S.mapSkin = b.dataset.setmapskin; persist(); AudioSys.play('click');
     }
     UI.renderShop();
   });
