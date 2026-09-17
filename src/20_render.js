@@ -153,18 +153,53 @@ function drawEnemyShape(ctx, shape, cx, cy, R, ang, color, lw, time, seed){
 }
 
 /* ---- Башни: восьмиугольная платформа + глиф типа + пипсы уровня ---- */
+let SKIN_OVERRIDE = null; // превью скинов в магазине
+function skinOf(){ return SKIN_OVERRIDE || S.skin || 'classic'; }
+function towerSkin(base){
+  const sk = skinOf();
+  if (sk === 'chrome') return { main:'#d7dee8', hi:'#ffffff' };
+  if (sk === 'neon')   return { main:'#ff4df0', hi:'#ffd9f6' };
+  if (sk === 'toxic')  return { main:'#a4ff1e', hi:'#eaffc4' };
+  return { main: base, hi: '#ffffff' };
+}
+
 function drawTowerAt(ctx, type, lvl, px, py, cs, aim, color){
   const R = cs*0.36;
+  const skc = towerSkin(color);
   // платформа
   ctx.save(); ctx.translate(px,py);
   ctx.beginPath();
   for (let i=0;i<8;i++){ const a=i*TAU/8+TAU/16; i?ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R):ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R); }
   ctx.closePath();
   ctx.fillStyle = 'rgba(8,14,30,.9)'; ctx.fill();
-  ctx.strokeStyle = hexA(color,0.55); ctx.lineWidth = Math.max(1,cs*0.045); ctx.stroke();
-  // глиф
-  ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.2, cs*0.055); ctx.lineCap = 'round';
+  ctx.strokeStyle = hexA(skc.main,0.6); ctx.lineWidth = Math.max(1,cs*0.045); ctx.stroke();
+  if (skinOf() !== 'classic'){ // кольцо-блик платформы на скинах
+    ctx.strokeStyle = hexA(skc.hi,0.35); ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i=0;i<8;i++){ const a=i*TAU/8+TAU/16; i?ctx.lineTo(Math.cos(a)*R*0.72,Math.sin(a)*R*0.72):ctx.moveTo(Math.cos(a)*R*0.72,Math.sin(a)*R*0.72); }
+    ctx.closePath(); ctx.stroke();
+  }
+  // глиф: основной штрих + детализированный тонкий повтор на скинах
+  ctx.lineCap = 'round';
   const g = R*0.55;
+  if (skinOf() === 'classic'){
+    paintGlyph(ctx, type, g, aim, cs, color, Math.max(1.2, cs*0.055));
+  } else {
+    paintGlyph(ctx, type, g, aim, cs, skc.main, Math.max(1.4, cs*0.06));
+    paintGlyph(ctx, type, g, aim, cs, skc.hi, Math.max(0.8, cs*0.022));
+  }
+  // пипсы уровня
+  ctx.restore();
+  if (lvl > 1){
+    ctx.fillStyle = skc.main;
+    for (let i=0;i<lvl;i++) ctx.fillRect(px-cs*0.16+i*cs*0.16, py+R+cs*0.06, cs*0.1, cs*0.05);
+  }
+}
+
+/* Глиф башни: цвет и толщина задаются вызывающим */
+function paintGlyph(ctx, type, g, aim, cs, color, lw){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath();
   switch(TOWERS[type].kind){
     case 'gun':
@@ -220,12 +255,69 @@ function drawTowerAt(ctx, type, lvl, px, py, cs, aim, color){
       ctx.beginPath(); ctx.arc(g*0.1, 0, g*0.16, 0, TAU); ctx.stroke();
       break;
   }
-  // пипсы уровня
   ctx.restore();
-  if (lvl > 1){
-    ctx.fillStyle = color;
-    for (let i=0;i<lvl;i++) ctx.fillRect(px-cs*0.16+i*cs*0.16, py+R+cs*0.06, cs*0.1, cs*0.05);
+}
+
+/* Глиф башни: цвет и толщина задаются вызывающим */
+function paintGlyph(ctx, type, g, aim, cs, color, lw){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round';
+  ctx.beginPath();
+  switch(TOWERS[type].kind){
+    case 'gun':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.moveTo(-g*0.5,0); ctx.lineTo(g,0); ctx.moveTo(-g*0.5,-g*0.45); ctx.lineTo(-g*0.5,g*0.45);
+      ctx.stroke(); ctx.restore(); break;
+    case 'cryo':
+      for (let i=0;i<3;i++){ const a=i*TAU/3+(aim||0); ctx.moveTo(Math.cos(a)*g*0.3,Math.sin(a)*g*0.3); ctx.lineTo(Math.cos(a)*g,Math.sin(a)*g); }
+      ctx.stroke(); break;
+    case 'missile':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.moveTo(-g*0.4,-g*0.5); ctx.lineTo(g*0.8,0); ctx.lineTo(-g*0.4,g*0.5); ctx.closePath(); ctx.stroke();
+      ctx.restore(); break;
+    case 'tesla':
+      ctx.moveTo(-g,0); ctx.lineTo(-g*0.2,0); ctx.lineTo(-g*0.35,-g*0.5); ctx.lineTo(g*0.4,g*0.05);
+      ctx.lineTo(g*0.25,-g*0.45); ctx.lineTo(g,0.01);
+      ctx.stroke(); break;
+    case 'sniper':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.moveTo(-g*0.6,0); ctx.lineTo(g,0);
+      ctx.moveTo(g*0.15,-g*0.35); ctx.lineTo(g*0.15,g*0.35);
+      ctx.stroke(); ctx.restore(); break;
+    case 'bank':
+      ctx.moveTo(-g,g*0.7); ctx.lineTo(-g,-g*0.4); ctx.lineTo(0,-g); ctx.lineTo(g,-g*0.4); ctx.lineTo(g,g*0.7);
+      ctx.moveTo(-g*0.45,g*0.7); ctx.lineTo(-g*0.45,-g*0.1); ctx.moveTo(0,g*0.7); ctx.lineTo(0,-g*0.1); ctx.moveTo(g*0.45,g*0.7); ctx.lineTo(g*0.45,-g*0.1);
+      ctx.stroke(); break;
+    case 'beam':
+      ctx.save(); ctx.rotate(aim||0);
+      ctx.rect(-g*0.7,-g*0.4,g*0.9,g*0.8); ctx.stroke();
+      ctx.moveTo(g*0.2,0); ctx.lineTo(g,0); ctx.stroke();
+      ctx.restore(); break;
+    case 'poison': // колба с пузырьками
+      ctx.beginPath(); ctx.arc(0, g*0.35, g*0.55, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-g*0.28, g*0.35-g*0.5); ctx.lineTo(g*0.28, g*0.35-g*0.5);
+      ctx.moveTo(-g*0.22, g*0.35-g*0.5); ctx.lineTo(-g*0.22, g*0.35-g*0.15);
+      ctx.moveTo(g*0.22, g*0.35-g*0.5); ctx.lineTo(g*0.22, g*0.35-g*0.15);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(-g*0.12, g*0.42, g*0.12, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g*0.16, g*0.55, g*0.08, 0, TAU); ctx.stroke();
+      break;
+    case 'mortar': // мортира: короткий толстый ствол под углом вверх
+      ctx.save(); ctx.rotate((aim||0) - 0.9);
+      ctx.lineWidth = Math.max(2.5, cs*0.08);
+      ctx.beginPath(); ctx.moveTo(-g*0.2, 0); ctx.lineTo(g, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g, 0, g*0.28, 0, TAU); ctx.stroke();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(-g*0.25, g*0.25, g*0.3, 0, TAU); ctx.stroke();
+      break;
+    case 'amp': // излучатель: концентрические дуги
+      ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.4, -TAU/4, TAU/4); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-g*0.35, 0, g*0.85, -TAU/4, TAU/4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-g*0.7, 0); ctx.lineTo(g*0.1, 0); ctx.stroke();
+      ctx.beginPath(); ctx.arc(g*0.1, 0, g*0.16, 0, TAU); ctx.stroke();
+      break;
   }
+  ctx.restore();
 }
 
 /* Иконки для DOM-карточек (data URL, рисуются один раз) */

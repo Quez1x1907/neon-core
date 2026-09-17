@@ -778,18 +778,19 @@ function strokePoly(c, pts){
    Стоимость ~300 простых операций — приемлемо даже для слабых телефонов. */
 function drawBGContent(c){
   const BL = 24; // запас под тряску
+  const MS = MAP_SKINS[S.mapSkin] || MAP_SKINS.classic;
   // фон
   const g = c.createLinearGradient(-BL,-BL, V.w+BL, V.h+BL);
-  g.addColorStop(0,'#070b18'); g.addColorStop(0.5,'#05070f'); g.addColorStop(1,'#0a0f22');
+  g.addColorStop(0, MS.bg[0]); g.addColorStop(0.5, MS.bg[1]); g.addColorStop(1, MS.bg[2]);
   c.fillStyle = g; c.fillRect(-BL,-BL, V.w+BL*2, V.h+BL*2);
   // сетка
-  c.strokeStyle = 'rgba(0,229,255,0.05)'; c.lineWidth = 1;
+  c.strokeStyle = MS.grid; c.lineWidth = 1;
   for (let i=0;i<=G.cols;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+G.rows*V.cs); c.stroke(); }
   for (let j=0;j<=G.rows;j++){ c.beginPath(); c.moveTo(V.ox, V.oy+j*V.cs); c.lineTo(V.ox+G.cols*V.cs, V.oy+j*V.cs); c.stroke(); }
-  c.strokeStyle = 'rgba(0,229,255,0.16)';
+  c.strokeStyle = MS.border;
   c.strokeRect(V.ox, V.oy, G.cols*V.cs, G.rows*V.cs);
   // клетки пути
-  c.fillStyle = 'rgba(0,229,255,0.05)';
+  c.fillStyle = MS.cell;
   for (const k of G.pathCells){
     const [cc,cr] = k.split(',').map(Number);
     rr(c, V.ox+cc*V.cs+1.5, V.oy+cr*V.cs+1.5, V.cs-3, V.cs-3, 4); c.fill();
@@ -814,14 +815,14 @@ function drawBGContent(c){
   for (const k of G.buildable){
     const [cc,cr] = k.split(',').map(Number);
     const x = V.ox+(cc+0.5)*V.cs, y = V.oy+(cr+0.5)*V.cs;
-    c.strokeStyle = 'rgba(0,229,255,0.30)';
+    c.strokeStyle = 'rgba('+MS.marker+',0.30)';
     c.lineWidth = 1;
     c.beginPath(); c.arc(x, y, V.cs*0.17, 0, TAU); c.stroke();
-    c.fillStyle = 'rgba(0,229,255,0.55)';
+    c.fillStyle = 'rgba('+MS.marker+',0.55)';
     c.beginPath(); c.arc(x, y, Math.max(2, V.cs*0.055), 0, TAU); c.fill();
   }
   // фоновые «узлы данных» на свободных клетках — детализируют поле, детерминированно по клетке
-  c.fillStyle = 'rgba(0,229,255,0.10)';
+  c.fillStyle = MS.node;
   for (let cc=0; cc<G.cols; cc++){
     for (let cr=0; cr<G.rows; cr++){
       const k = cc+','+cr;

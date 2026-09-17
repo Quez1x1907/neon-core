@@ -137,7 +137,7 @@ function zapFx(pts, color){
    иначе первые волны непомерно жёсткие. */
 function hpMulFor(wave, mult){
   const warm = 0.55 + 0.45*Math.min(wave,10)/10;
-  return (1 + (mult-1)*warm) * Math.pow(1.115, wave-1) * (1 + 0.03*wave);
+  return (1 + (mult-1)*warm) * Math.pow(1.128, wave-1) * (1 + 0.03*wave);
 }
 /* Награда с учётом карты и мета-прокачки. Экономика строже: множитель 0.7,
    а после 10-й волны награда затухает (−4% за волну) — иначе к концу копится мешок денег */

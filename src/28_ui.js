@@ -24,6 +24,13 @@ const UI = {
     this.els.abEmp.title = t('ab_emp')+' — Q';
     this.els.abOver.title = t('ab_over')+' — E';
     this.els.btnAuto.title = t('auto_tip')+' — R';
+    // иконки меню: профиль/достижения/настройки
+    const pm = document.getElementById('btn-profile-menu');
+    if (pm){ pm.innerHTML = ICONS.person; pm.title = t('profile_t'); }
+    const am = document.getElementById('btn-ach-menu');
+    if (am){ am.innerHTML = ICONS.badge; am.title = t('ach_t'); }
+    const sm = document.getElementById('btn-settings-menu');
+    if (sm){ sm.innerHTML = ICONS.gear; sm.title = t('settings'); }
   },
 
   /* ---------- экраны ---------- */
@@ -39,11 +46,40 @@ const UI = {
     if (name==='lab') this.renderLab();
     if (name==='ach') this.renderAch();
     if (name==='profile') this.renderProfile();
+    if (name==='shop') this.renderShop();
 
   },
 
   /* ---------- главное меню ---------- */
   renderMenu(){
+    const out = {};
+    try{
+      const today = new Date().toDateString();
+      const yest = new Date(Date.now()-86400000).toDateString();
+      out.canClaim = S.lastCheckin !== today;
+      out.day = S.checkinDay || ((S.lastCheckin === yest) ? 1 : 0) || (out.canClaim ? 1 : 0);
+      out.reward = Math.min(10 + (Math.max(1,out.day)-1)*5, 50);
+    }catch(e){}
+    const mc = $('menu-checkin');
+    if (mc){
+      if (out.canClaim){
+        mc.innerHTML = '<div class="ci-title">'+t('checkin_title')+'</div><div class="ci-day">'+t('checkin_day',{d:out.day})+'</div><button class="btn primary" id="ci-claim">'+t('checkin_btn',{n:out.reward})+'</button>';
+        mc.classList.add('ready');
+        const btn = document.getElementById('ci-claim');
+        btn.addEventListener('click', ()=>{
+          const reward = claimCheckin();
+          if (reward > 0){
+            UI.toast(t('checkin', { n:reward, d:S.checkinDay }), 'ach');
+            AudioSys.play('ach');
+            haptic('success');
+            UI.renderMenu();
+          }
+        });
+      } else {
+        mc.innerHTML = '<div class="ci-title">'+t('checkin_title')+'</div><div class="ci-day">'+t('checkin_done',{d:S.checkinDay||1})+'</div>';
+        mc.classList.remove('ready');
+      }
+    }
     let hello = '';
     try{
       const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
@@ -138,6 +174,75 @@ const UI = {
     $('profile-stars').textContent = '◆ '+fmtNum(S.cores);
     $('profile-list').innerHTML = rows.map(([k,v,hi])=>
       '<div class="stat-row"><span>'+k+'</span><b class="'+(hi?'hi':'')+'">'+v+'</b></div>').join('');
+  },
+
+  /* ---------- магазин ---------- */
+  renderShop(){
+    this.hideTip();
+    $('shop-cores').textContent = '◆ '+fmtNum(S.cores);
+    const list = $('shop-list');
+    let html = '<h3 class="shop-h">'+t('shop_boosts')+'</h3>';
+    BOOSTS.forEach(b=>{
+      const owned = S.boosts[b.id]||0;
+      html += '<div class="shop-item panel"><div class="si-main"><div class="si-name">'+t(b.key)+'</div><div class="si-desc">'+t(b.dkey)+'</div><div class="si-have">'+t('owned')+': '+owned+'</div></div><button class="btn primary" data-buyboost="'+b.id+'">◆'+b.price+'</button></div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_skins')+'</h3>';
+    SKINS.forEach(sk=>{
+      const owned = sk.id==='classic' || !!S.skins[sk.id];
+      const active = (S.skin||'classic')===sk.id;
+      html += '<div class="shop-item panel'+(active?' sel':'')+'"><canvas width="150" height="44" data-skinprev="'+sk.id+'"></canvas><div class="si-main"><div class="si-name">'+t(sk.key)+'</div></div>'+
+        (owned ? (active ? '<span class="chip">✓</span>' : '<button class="btn" data-setskin="'+sk.id+'">'+t('apply')+'</button>') : '<button class="btn primary" data-buyskin="'+sk.id+'" style="white-space:nowrap">◆'+sk.price+'</button>')+'</div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_fx')+'</h3>';
+    FXS.forEach(f=>{
+      const owned = !!S.fx[f.id];
+      const on = S.fx[f.id] === 2;
+      html += '<div class="shop-item panel"><div class="si-main"><div class="si-name">'+t(f.key)+'</div></div>'+
+        (owned
+          ? '<button class="btn'+(on?' primary':'')+'" data-fx="'+f.id+'">'+(on?'ВКЛ':'ВЫКЛ')+'</button>'
+          : '<button class="btn primary" data-buyfx="'+f.id+'">◆'+f.price+'</button>')+'</div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_mapskins')+'</h3>';
+    MAP_SKIN_ITEMS.forEach(mk=>{
+      const owned = mk.id==='classic' || !!S.mapSkins[mk.id];
+      const active = (S.mapSkin||'classic')===mk.id;
+      html += '<div class="shop-item panel'+(active?' sel':'')+'"><canvas width="150" height="56" data-mapskinprev="'+mk.id+'"></canvas><div class="si-main"><div class="si-name">'+t(mk.key)+'</div></div>'+
+        (owned ? (active ? '<span class="chip">✓</span>' : '<button class="btn" data-setmapskin="'+mk.id+'">'+t('apply')+'</button>') : '<button class="btn primary" data-buymapskin="'+mk.id+'" style="white-space:nowrap">◆'+mk.price+'</button>')+'</div>';
+    });
+    html += '<h3 class="shop-h">'+t('shop_towers')+'</h3>';
+    const lockedTowers = TOWER_ORDER.filter(tp=>UNLOCK_STARS[tp]>0 && !towerUnlocked(tp));
+    html += lockedTowers.length
+      ? lockedTowers.map(tp=>{
+          const def = TOWERS[tp];
+          const price = 20 + UNLOCK_STARS[tp]*5;
+          return '<div class="shop-item panel"><div class="si-main"><div class="si-name" style="color:'+def.color+'">'+t(def.key)+'</div><div class="si-desc">'+t(def.key+'_d')+'</div></div><button class="btn primary" data-buytower="'+tp+'">◆'+price+'</button></div>';
+        }).join('')
+      : '<div class="si-desc" style="padding:6px 2px;font-family:var(--mono);font-size:12px">'+t('shop_all')+'</div>';
+    list.innerHTML = html;
+    list.querySelectorAll('[data-mapskinprev]').forEach(cv=>{
+      const mkid = cv.getAttribute('data-mapskinprev');
+      const MS = MAP_SKINS[mkid] || MAP_SKINS.classic;
+      const cc = cv.getContext('2d');
+      const W = cv.width, H = cv.height;
+      const gg = cc.createLinearGradient(0,0,W,H);
+      gg.addColorStop(0, MS.bg[0]); gg.addColorStop(0.5, MS.bg[1]); gg.addColorStop(1, MS.bg[2]);
+      cc.fillStyle = gg; cc.fillRect(0,0,W,H);
+      cc.strokeStyle = MS.grid; cc.lineWidth = 1;
+      for (let x=10;x<W;x+=18){ cc.beginPath(); cc.moveTo(x,0); cc.lineTo(x,H); cc.stroke(); }
+      cc.strokeStyle = MS.marker.replace(')',',0.8)').replace('rgba(', 'rgba(');
+      cc.lineWidth = 3; cc.lineCap = 'round';
+      cc.beginPath(); cc.moveTo(12, H*0.7); cc.lineTo(W*0.4, H*0.7); cc.lineTo(W*0.4, H*0.3); cc.lineTo(W-14, H*0.3); cc.stroke();
+      cc.fillStyle = 'rgba('+MS.marker+',0.9)';
+      cc.beginPath(); cc.arc(W-14, H*0.3, 4, 0, TAU); cc.fill();
+    });
+    list.querySelectorAll('[data-skinprev]').forEach(cv=>{
+      const sk = cv.getAttribute('data-skinprev');
+      const cc = cv.getContext('2d');
+      cc.clearRect(0,0,150,44);
+      SKIN_OVERRIDE = sk;
+      ['pulse','cryo','tesla'].forEach((tp,i)=>drawTowerAt(cc, tp, 1, 32+i*46, 22, 40, -TAU/8, TOWERS[tp].color));
+      SKIN_OVERRIDE = null;
+    });
   },
 
   /* ---------- лаборатория ---------- */
@@ -539,12 +644,38 @@ const UI = {
       '<div class="m-btns">'+
       '<button class="btn" id="m-exp">'+t('s_export')+'</button>'+
       '<textarea id="m-save" class="save-ta" spellcheck="false" placeholder="'+t('s_import_ph')+'"></textarea>'+
+      '<div class="m-row"><span>'+t('s_vol')+'</span>'+
+        '<input type="range" id="m-vol" min="0" max="100" value="'+Math.round((S.volume!==undefined?S.volume:0.5)*100)+'" style="width:150px;accent-color:var(--cyan)"></div>'+
+      '<div class="m-row"><span>'+t('promo')+'</span>'+
+        '<input type="text" id="m-promo" class="promo-in" spellcheck="false" placeholder="CODE" style="width:130px">'+
+        '<button class="btn" id="m-promo-ok">OK</button></div>'+
+      '<div class="m-btns">'+
+      '<button class="btn" id="m-exp">'+t('s_export')+'</button>'+
+      '<textarea id="m-save" class="save-ta" spellcheck="false" placeholder="'+t('s_import_ph')+'"></textarea>'+
       '<button class="btn" id="m-imp">'+t('s_import')+'</button>'+
       '<button class="btn danger" id="m-reset">'+t('s_reset')+'</button>'+
       '<button class="btn primary" id="m-close">'+t('p_resume')+'</button></div>'+
       '<div class="m-text" style="margin-top:12px">'+t('s_note')+'</div>'+
       lastErrHtml()
     );
+    $('m-vol').addEventListener('input', (ev)=>{ setVolume(ev.target.value/100); });
+    $('m-promo-ok').addEventListener('click', ()=>{
+      const code = ($('m-promo').value||'').trim().toUpperCase();
+      if (!code) return;
+      const reward = PROMOS[code];
+      if (reward && !S.promoUsed[code]){
+        S.promoUsed[code] = 1;
+        addCores(reward);
+        persist();
+        UI.toast(t('promo_ok', { n:reward }), 'ach');
+        AudioSys.play('ach');
+        haptic('success');
+        this.openSettings();
+      } else {
+        UI.toast(t('promo_bad'), 'warn');
+        AudioSys.play('error');
+      }
+    });
     $('m-snd-on').addEventListener('click', ()=>{ setSound(true); this.openSettings(); });
     $('m-snd-off').addEventListener('click', ()=>{ setSound(false); this.openSettings(); });
     $('m-lang-ru').addEventListener('click', ()=>{ setLang('ru'); this.openSettings(); });
@@ -623,14 +754,23 @@ const UI = {
   },
   openDefeat(){
     this.lastEnd = { type:'lost' };
+    const rcost = 20 * Math.pow(2, G.revives||0);
+    const canRev = S.cores >= rcost;
     this.modal(
       '<h3 class="pink">'+t('d_title')+'</h3>'+
       '<div class="m-text">'+t('d_wave', { n:Math.max(1,G.wave) })+'</div>'+
       '<div class="m-btns">'+
+      (canRev ? '<button class="btn primary big" id="d-revive">'+t('d_revive')+' ◆'+rcost+'</button>' : '')+
       '<button class="btn primary big" id="d-retry">'+t('d_retry')+'</button>'+
       '<button class="btn big" id="d-maps">'+t('d_maps')+'</button></div>',
       true
     );
+    const rv = document.getElementById('d-revive');
+    if (rv) rv.addEventListener('click', ()=>{
+      if (S.cores < rcost){ AudioSys.play('error'); return; }
+      S.cores -= rcost; G.revives = (G.revives||0)+1; persist();
+      reviveRun();
+    });
     $('d-retry').addEventListener('click', ()=>{ this.closeModal(); startGame(G.mapIdx, G.endless); });
     $('d-maps').addEventListener('click', ()=>{ this.closeModal(); exitGame(); });
   },
@@ -647,6 +787,33 @@ const UI = {
 };
 
 /* Характеристики башни строками — общие для инспектора и тултипа */
+/* ---- Товары магазина ---- */
+const BOOSTS = [
+  { id:'dmg',   key:'sh_dmg',   dkey:'sh_dmg_d',   price:15 },
+  { id:'lives', key:'sh_lives', dkey:'sh_lives_d', price:12 },
+  { id:'cash',  key:'sh_cash',  dkey:'sh_cash_d',  price:14 },
+];
+const SKINS = [
+  { id:'classic', key:'sk_classic', price:0 },
+  { id:'chrome',  key:'sk_chrome',  price:40 },
+  { id:'neon',    key:'sk_neon',    price:50 },
+  { id:'toxic',   key:'sk_toxic',   price:45 },
+];
+const MAP_SKIN_ITEMS = [
+  { id:'classic', key:'msk_classic', price:0 },
+  { id:'desert',  key:'msk_desert',  price:60 },
+  { id:'ice',     key:'msk_ice',     price:60 },
+  { id:'blood',   key:'msk_blood',   price:70 },
+];
+const PROMOS = { 'NEON':100, 'BOSS':250, 'MEGA':1000, 'GODMODE':5000 };
+
+const FXS = [
+  { id:'gold',   key:'fx_gold',   price:30 },
+  { id:'plasma', key:'fx_plasma', price:35 },
+  { id:'snow',   key:'fx_snow',   price:25 },
+  { id:'boom',   key:'fx_boom',   price:30 },
+];
+
 /* Последние ошибки с этого устройства — для отчёта разработчику */
 function lastErrHtml(){
   let arr = [];

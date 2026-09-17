@@ -131,6 +131,22 @@ h1,h2,h3{font-weight:600}
 .track .t-buy{display:flex;flex-direction:column;align-items:center;gap:5px}
 .track .t-buy .btn{padding:8px 14px;font-size:12px}
 
+/* меню: чекин-плитка и ряд иконок */
+#menu-checkin{width:min(340px,84vw);padding:10px 14px;text-align:center;margin:0 auto 4px}
+#menu-checkin .ci-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+#menu-checkin .ci-day{font-family:var(--mono);font-size:12px;color:var(--text);margin:4px 0 8px}
+#menu-checkin.ready{border-color:rgba(168,255,62,.55);box-shadow:0 0 18px rgba(168,255,62,.2)}
+#menu-checkin.ready .ci-day{color:var(--lime)}
+#menu-checkin .btn{padding:8px 16px;font-size:12.5px}
+.menu-icons{display:flex;gap:12px;justify-content:center;margin:2px 0 6px}
+.menu-icons .hbtn{width:54px;height:46px}
+.menu-icons .hbtn svg{width:22px;height:22px}
+.promo-in{
+  background:rgba(3,6,14,.8);border:1px solid var(--line);border-radius:8px;
+  color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;
+  -webkit-user-select:text;user-select:text;
+}
+
 /* магазин */
 .shop-h{font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;font-size:12.5px;color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,.5);margin:18px 2px 8px}
 .shop-item{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:8px 0}
@@ -432,7 +448,12 @@ h1,h2,h3{font-weight:600}
     <button class="btn big" id="btn-lab" data-i="lab"></button>
     <button class="btn big" id="btn-ach" data-i="ach"></button>
     <button class="btn big" id="btn-profile" data-i="profile"></button>
-    <button class="btn ghost big" id="btn-settings" data-i="settings"></button>
+    <div id="menu-checkin" class="panel"></div>
+    <div class="menu-icons">
+      <button class="hbtn big" id="btn-profile-menu" title="Профиль"></button>
+      <button class="hbtn big" id="btn-ach-menu" title="Достижения"></button>
+      <button class="hbtn big" id="btn-settings-menu" title="Настройки"></button>
+    </div>
   </div>
   <div class="menu-stats" id="menu-stats"></div>
 </section>
@@ -529,6 +550,12 @@ ru: {
   tagline:'tower defense · защити ядро от вирусов',
   play:'Играть', lab:'Лаборатория', ach:'Достижения', settings:'Настройки',
   menu_endless:'Бесконечный режим', endless_title:'Бесконечный · рекорды',
+  profile_t:'Профиль', ach_t:'Достижения', set_t:'Настройки',
+  checkin_title:'Ежедневный вход', checkin_btn:'Забрать +{n}◆',
+  checkin_done:'Отмечено · день {d}', checkin_day:'день {d}',
+  promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
+  msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
+  shop_mapskins:'Скины карт',
   profile:'Профиль', pr_games:'Партий сыграно', pr_wins:'Побед',
   pr_kills:'Уничтожено вирусов', pr_bosses:'Побеждено боссов', pr_endless:'∞ рекорд',
   pr_stars:'Звёзды', pr_ach:'Достижения', pr_towers:'Построено башен',
@@ -647,6 +674,12 @@ en: {
   tagline:'tower defense · protect the core from viruses',
   play:'Play', lab:'Lab', ach:'Achievements', settings:'Settings',
   menu_endless:'Endless mode', endless_title:'Endless · records',
+  profile_t:'Profile', ach_t:'Achievements', set_t:'Settings',
+  checkin_title:'Daily login', checkin_btn:'Claim +{n} cores',
+  checkin_done:'Claimed · day {d}', checkin_day:'day {d}',
+  promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
+  msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
+  shop_mapskins:'Map skins',
   profile:'Profile', pr_games:'Games played', pr_wins:'Victories',
   pr_kills:'Viruses destroyed', pr_bosses:'Bosses defeated', pr_endless:'∞ record',
   pr_stars:'Stars', pr_ach:'Achievements', pr_towers:'Towers built',
@@ -762,6 +795,46 @@ en: {
   speed_x:'{n}×', stats_kills:'Kills', stats_best:'∞ record',
 }
 };
+
+/* Ключи магазина, чекина, промокодов и скинов карт (добавлены поверх базовых словарей) */
+Object.assign(I18N.ru, {
+  shop:'Магазин', shop_boosts:'Бусты (следующая партия)', shop_skins:'Скины башен',
+  shop_fx:'Эффекты', shop_towers:'Открытие башен', shop_all:'Всё открыто',
+  shop_mapskins:'Скины карт',
+  sh_dmg:'Усиление', sh_dmg_d:'+25% урона в следующей партии',
+  sh_lives:'Резерв', sh_lives_d:'+8 жизней ядра в следующей партии',
+  sh_cash:'Заначка', sh_cash_d:'+150$ в начале следующей партии',
+  sk_classic:'Классика', sk_chrome:'Хром', sk_neon:'Неон-пурпур', sk_toxic:'Токсик',
+  fx_gold:'Золотые трассы', fx_plasma:'Плазменные выстрелы', fx_snow:'Снегопад', fx_boom:'Двойной взрыв',
+  owned:'Есть', apply:'Применить', bought:'Куплено',
+  d_revive:'Возродиться', d_consol:'Утешительные ядра: +{n}',
+  boost_on:'Буст: {n}', a_shop:'Покупатель', a_shop_d:'Купить 5 товаров в магазине',
+  checkin_title:'Ежедневный вход', checkin_btn:'Забрать +{n}◆',
+  checkin_done:'Отмечено · день {d}', checkin_day:'день {d}',
+  promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
+  msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
+  s_full:'Во весь экран', s_autolow:'Подтормаживает — включил низкую графику',
+  s_lasterr:'Последняя ошибка:',
+});
+Object.assign(I18N.en, {
+  shop:'Shop', shop_boosts:'Boosts (next run)', shop_skins:'Tower skins',
+  shop_fx:'Effects', shop_towers:'Unlock towers', shop_all:'All unlocked',
+  shop_mapskins:'Map skins',
+  sh_dmg:'Power-up', sh_dmg_d:'+25% damage in the next run',
+  sh_lives:'Reserve', sh_lives_d:'+8 core lives in the next run',
+  sh_cash:'Stash', sh_cash_d:'+150$ at the start of the next run',
+  sk_classic:'Classic', sk_chrome:'Chrome', sk_neon:'Neon Purple', sk_toxic:'Toxic',
+  fx_gold:'Golden traces', fx_plasma:'Plasma shots', fx_snow:'Snowfall', fx_boom:'Double blast',
+  owned:'Owned', apply:'Apply', bought:'Purchased',
+  d_revive:'Revive', d_consol:'Consolation cores: +{n}',
+  boost_on:'Boost: {n}', a_shop:'Shopper', a_shop_d:'Buy 5 items in the shop',
+  checkin_title:'Daily login', checkin_btn:'Claim +{n} cores',
+  checkin_done:'Claimed · day {d}', checkin_day:'day {d}',
+  promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
+  msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
+  s_full:'Fullscreen', s_autolow:'Running slow — enabled low graphics',
+  s_lasterr:'Last error:',
+});
 // LANG инициализируется в main.js после загрузки сохранения
 let LANG = 'en';
 function t(key, params){
@@ -882,7 +955,15 @@ const WAVE_MODS = {
 /* Расписание модификаторов в кампании (волна → модификатор) */
 const CAMPAIGN_MODS = { 6:'gold', 11:'storm', 16:'armor' };
 
-/* ---- Враги ---- */
+/* Скины карт: палитры для фона, сетки и декора */
+const MAP_SKINS = {
+  classic: { key:'msk_classic', price:0,  bg:['#070b18','#05070f','#0a0f22'], grid:'rgba(0,229,255,0.05)',  border:'rgba(0,229,255,0.16)', cell:'rgba(0,229,255,0.05)',  node:'rgba(0,229,255,0.10)',  marker:'0,229,255',  decoB:'rgba(0,229,255,0.18)', decoL:'rgba(0,229,255,0.25)' },
+  desert:  { key:'msk_desert',  price:60, bg:['#181008','#100b05','#221608'], grid:'rgba(255,176,32,0.06)', border:'rgba(255,176,32,0.18)', cell:'rgba(255,176,32,0.05)',  node:'rgba(255,176,32,0.10)',  marker:'255,176,32', decoB:'rgba(255,176,32,0.18)', decoL:'rgba(255,176,32,0.25)' },
+  ice:     { key:'msk_ice',     price:60, bg:['#061018','#040a12','#0a1826'], grid:'rgba(160,220,255,0.06)', border:'rgba(160,220,255,0.18)', cell:'rgba(160,220,255,0.06)',  node:'rgba(160,220,255,0.10)',  marker:'160,220,255', decoB:'rgba(160,220,255,0.18)', decoL:'rgba(160,220,255,0.25)' },
+  blood:   { key:'msk_blood',   price:70, bg:['#160608','#0e0406','#1e0a0e'], grid:'rgba(255,51,85,0.06)',  border:'rgba(255,51,85,0.18)', cell:'rgba(255,51,85,0.05)',  node:'rgba(255,51,85,0.10)',  marker:'255,51,85',  decoB:'rgba(255,51,85,0.18)', decoL:'rgba(255,51,85,0.25)' },
+};
+
+/* Бесконечная цепочка
 const ENEMIES = {
   drone:   { key:'en_drone',    hp:32,  speed:1.5,  armor:0, reward:5,   leak:1,  r:.30, color:'#ff2d78', shape:'tri',  cost:1 },
   bit:     { key:'en_bit',      hp:10,  speed:2.3,  armor:0, reward:2,   leak:1,  r:.18, color:'#ff7a2d', shape:'dia',  cost:.35 },
@@ -987,6 +1068,9 @@ const ICONS = {
   pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
   home:'<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',
   full:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  gear:'<svg viewBox="0 0 24 24"><path d="M19.4 13a7.8 7.8 0 000-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-1.6-1L15 3.4h-4l-.4 2.6a7.6 7.6 0 00-1.6 1l-2.4-1-2 3.4L6.6 11a7.8 7.8 0 000 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 001.6 1l.4 2.6h4l.4-2.6a7.6 7.6 0 001.6-1l2.4 1 2-3.4-2-1.6zM13 15a3 3 0 110-6 3 3 0 010 6z" fill="currentColor" stroke="none"/></svg>',
+  person:'<svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z" fill="currentColor" stroke="none"/></svg>',
+  badge:'<svg viewBox="0 0 24 24"><path d="M12 2l2.4 2.4 3.2-.4.8 3.2L21 9.6l-1.4 2.9 1 3.1-3.1 1L16 19.7l-3.2-.4L12 22l-2.4-2.4-3.2.4-.8-3.2L3 15.6 4.4 12.7 3.4 9.6l3.1-1L7 5.6l3.2.4z" fill="currentColor" stroke="none"/><path d="M10.6 13.2l-2.2-2.2 1.2-1.2 1 1 3-3 1.2 1.2z" fill="#05070f" stroke="none"/></svg>',
   core:'<svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg>',
   dmg:'<svg viewBox="0 0 24 24"><path d="M4 20l6-6M14 4l6 6M4 4l16 16" /><path d="M4 14v6h6M20 10V4h-6"/></svg>',
   lives:'<svg viewBox="0 0 24 24"><path d="M12 21C7 16 3 12.5 3 8.5 3 6 5 4 7.5 4c1.8 0 3.4 1 4.5 2.6C13.1 5 14.7 4 16.5 4 19 4 21 6 21 8.5c0 4-4 7.5-9 12.5z"/></svg>',
@@ -1001,7 +1085,7 @@ let SAVE_KEY = 'neoncore_v1';
 function defSave(){
   return {
     v:1, lang:null, sound:true, lowgfx:false, auto:false, volume:0.5, cores:0, savedAt:0,
-    skin:'classic', skins:{}, fx:{}, boosts:{dmg:0, lives:0, cash:0},
+    skin:'classic', skins:{}, fx:{}, boosts:{dmg:0, lives:0, cash:0}, mapSkin:'classic', mapSkins:{}, promoUsed:{},
     buyUnlocked:{}, lastCheckin:'', checkinDay:0,
     meta:{ dmg:0, lives:0, cash:0, income:0 },
     maps:{},            // idx → {stars, best, milestone}
@@ -2722,18 +2806,19 @@ function strokePoly(c, pts){
    Стоимость ~300 простых операций — приемлемо даже для слабых телефонов. */
 function drawBGContent(c){
   const BL = 24; // запас под тряску
+  const MS = MAP_SKINS[S.mapSkin] || MAP_SKINS.classic;
   // фон
   const g = c.createLinearGradient(-BL,-BL, V.w+BL, V.h+BL);
-  g.addColorStop(0,'#070b18'); g.addColorStop(0.5,'#05070f'); g.addColorStop(1,'#0a0f22');
+  g.addColorStop(0, MS.bg[0]); g.addColorStop(0.5, MS.bg[1]); g.addColorStop(1, MS.bg[2]);
   c.fillStyle = g; c.fillRect(-BL,-BL, V.w+BL*2, V.h+BL*2);
   // сетка
-  c.strokeStyle = 'rgba(0,229,255,0.05)'; c.lineWidth = 1;
+  c.strokeStyle = MS.grid; c.lineWidth = 1;
   for (let i=0;i<=G.cols;i++){ c.beginPath(); c.moveTo(V.ox+i*V.cs, V.oy); c.lineTo(V.ox+i*V.cs, V.oy+G.rows*V.cs); c.stroke(); }
   for (let j=0;j<=G.rows;j++){ c.beginPath(); c.moveTo(V.ox, V.oy+j*V.cs); c.lineTo(V.ox+G.cols*V.cs, V.oy+j*V.cs); c.stroke(); }
-  c.strokeStyle = 'rgba(0,229,255,0.16)';
+  c.strokeStyle = MS.border;
   c.strokeRect(V.ox, V.oy, G.cols*V.cs, G.rows*V.cs);
   // клетки пути
-  c.fillStyle = 'rgba(0,229,255,0.05)';
+  c.fillStyle = MS.cell;
   for (const k of G.pathCells){
     const [cc,cr] = k.split(',').map(Number);
     rr(c, V.ox+cc*V.cs+1.5, V.oy+cr*V.cs+1.5, V.cs-3, V.cs-3, 4); c.fill();
@@ -2758,14 +2843,14 @@ function drawBGContent(c){
   for (const k of G.buildable){
     const [cc,cr] = k.split(',').map(Number);
     const x = V.ox+(cc+0.5)*V.cs, y = V.oy+(cr+0.5)*V.cs;
-    c.strokeStyle = 'rgba(0,229,255,0.30)';
+    c.strokeStyle = 'rgba('+MS.marker+',0.30)';
     c.lineWidth = 1;
     c.beginPath(); c.arc(x, y, V.cs*0.17, 0, TAU); c.stroke();
-    c.fillStyle = 'rgba(0,229,255,0.55)';
+    c.fillStyle = 'rgba('+MS.marker+',0.55)';
     c.beginPath(); c.arc(x, y, Math.max(2, V.cs*0.055), 0, TAU); c.fill();
   }
   // фоновые «узлы данных» на свободных клетках — детализируют поле, детерминированно по клетке
-  c.fillStyle = 'rgba(0,229,255,0.10)';
+  c.fillStyle = MS.node;
   for (let cc=0; cc<G.cols; cc++){
     for (let cr=0; cr<G.rows; cr++){
       const k = cc+','+cr;
@@ -3199,6 +3284,13 @@ const UI = {
     this.els.abEmp.title = t('ab_emp')+' — Q';
     this.els.abOver.title = t('ab_over')+' — E';
     this.els.btnAuto.title = t('auto_tip')+' — R';
+    // иконки меню: профиль/достижения/настройки
+    const pm = document.getElementById('btn-profile-menu');
+    if (pm){ pm.innerHTML = ICONS.person; pm.title = t('profile_t'); }
+    const am = document.getElementById('btn-ach-menu');
+    if (am){ am.innerHTML = ICONS.badge; am.title = t('ach_t'); }
+    const sm = document.getElementById('btn-settings-menu');
+    if (sm){ sm.innerHTML = ICONS.gear; sm.title = t('settings'); }
   },
 
   /* ---------- экраны ---------- */
@@ -3220,6 +3312,34 @@ const UI = {
 
   /* ---------- главное меню ---------- */
   renderMenu(){
+    const out = {};
+    try{
+      const today = new Date().toDateString();
+      const yest = new Date(Date.now()-86400000).toDateString();
+      out.canClaim = S.lastCheckin !== today;
+      out.day = S.checkinDay || ((S.lastCheckin === yest) ? 1 : 0) || (out.canClaim ? 1 : 0);
+      out.reward = Math.min(10 + (Math.max(1,out.day)-1)*5, 50);
+    }catch(e){}
+    const mc = $('menu-checkin');
+    if (mc){
+      if (out.canClaim){
+        mc.innerHTML = '<div class="ci-title">'+t('checkin_title')+'</div><div class="ci-day">'+t('checkin_day',{d:out.day})+'</div><button class="btn primary" id="ci-claim">'+t('checkin_btn',{n:out.reward})+'</button>';
+        mc.classList.add('ready');
+        const btn = document.getElementById('ci-claim');
+        btn.addEventListener('click', ()=>{
+          const reward = claimCheckin();
+          if (reward > 0){
+            UI.toast(t('checkin', { n:reward, d:S.checkinDay }), 'ach');
+            AudioSys.play('ach');
+            haptic('success');
+            UI.renderMenu();
+          }
+        });
+      } else {
+        mc.innerHTML = '<div class="ci-title">'+t('checkin_title')+'</div><div class="ci-day">'+t('checkin_done',{d:S.checkinDay||1})+'</div>';
+        mc.classList.remove('ready');
+      }
+    }
     let hello = '';
     try{
       const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
@@ -3342,6 +3462,13 @@ const UI = {
           ? '<button class="btn'+(on?' primary':'')+'" data-fx="'+f.id+'">'+(on?'ВКЛ':'ВЫКЛ')+'</button>'
           : '<button class="btn primary" data-buyfx="'+f.id+'">◆'+f.price+'</button>')+'</div>';
     });
+    html += '<h3 class="shop-h">'+t('shop_mapskins')+'</h3>';
+    MAP_SKIN_ITEMS.forEach(mk=>{
+      const owned = mk.id==='classic' || !!S.mapSkins[mk.id];
+      const active = (S.mapSkin||'classic')===mk.id;
+      html += '<div class="shop-item panel'+(active?' sel':'')+'"><canvas width="150" height="56" data-mapskinprev="'+mk.id+'"></canvas><div class="si-main"><div class="si-name">'+t(mk.key)+'</div></div>'+
+        (owned ? (active ? '<span class="chip">✓</span>' : '<button class="btn" data-setmapskin="'+mk.id+'">'+t('apply')+'</button>') : '<button class="btn primary" data-buymapskin="'+mk.id+'" style="white-space:nowrap">◆'+mk.price+'</button>')+'</div>';
+    });
     html += '<h3 class="shop-h">'+t('shop_towers')+'</h3>';
     const lockedTowers = TOWER_ORDER.filter(tp=>UNLOCK_STARS[tp]>0 && !towerUnlocked(tp));
     html += lockedTowers.length
@@ -3352,6 +3479,22 @@ const UI = {
         }).join('')
       : '<div class="si-desc" style="padding:6px 2px;font-family:var(--mono);font-size:12px">'+t('shop_all')+'</div>';
     list.innerHTML = html;
+    list.querySelectorAll('[data-mapskinprev]').forEach(cv=>{
+      const mkid = cv.getAttribute('data-mapskinprev');
+      const MS = MAP_SKINS[mkid] || MAP_SKINS.classic;
+      const cc = cv.getContext('2d');
+      const W = cv.width, H = cv.height;
+      const gg = cc.createLinearGradient(0,0,W,H);
+      gg.addColorStop(0, MS.bg[0]); gg.addColorStop(0.5, MS.bg[1]); gg.addColorStop(1, MS.bg[2]);
+      cc.fillStyle = gg; cc.fillRect(0,0,W,H);
+      cc.strokeStyle = MS.grid; cc.lineWidth = 1;
+      for (let x=10;x<W;x+=18){ cc.beginPath(); cc.moveTo(x,0); cc.lineTo(x,H); cc.stroke(); }
+      cc.strokeStyle = MS.marker.replace(')',',0.8)').replace('rgba(', 'rgba(');
+      cc.lineWidth = 3; cc.lineCap = 'round';
+      cc.beginPath(); cc.moveTo(12, H*0.7); cc.lineTo(W*0.4, H*0.7); cc.lineTo(W*0.4, H*0.3); cc.lineTo(W-14, H*0.3); cc.stroke();
+      cc.fillStyle = 'rgba('+MS.marker+',0.9)';
+      cc.beginPath(); cc.arc(W-14, H*0.3, 4, 0, TAU); cc.fill();
+    });
     list.querySelectorAll('[data-skinprev]').forEach(cv=>{
       const sk = cv.getAttribute('data-skinprev');
       const cc = cv.getContext('2d');
@@ -3761,12 +3904,38 @@ const UI = {
       '<div class="m-btns">'+
       '<button class="btn" id="m-exp">'+t('s_export')+'</button>'+
       '<textarea id="m-save" class="save-ta" spellcheck="false" placeholder="'+t('s_import_ph')+'"></textarea>'+
+      '<div class="m-row"><span>'+t('s_vol')+'</span>'+
+        '<input type="range" id="m-vol" min="0" max="100" value="'+Math.round((S.volume!==undefined?S.volume:0.5)*100)+'" style="width:150px;accent-color:var(--cyan)"></div>'+
+      '<div class="m-row"><span>'+t('promo')+'</span>'+
+        '<input type="text" id="m-promo" class="promo-in" spellcheck="false" placeholder="CODE" style="width:130px">'+
+        '<button class="btn" id="m-promo-ok">OK</button></div>'+
+      '<div class="m-btns">'+
+      '<button class="btn" id="m-exp">'+t('s_export')+'</button>'+
+      '<textarea id="m-save" class="save-ta" spellcheck="false" placeholder="'+t('s_import_ph')+'"></textarea>'+
       '<button class="btn" id="m-imp">'+t('s_import')+'</button>'+
       '<button class="btn danger" id="m-reset">'+t('s_reset')+'</button>'+
       '<button class="btn primary" id="m-close">'+t('p_resume')+'</button></div>'+
       '<div class="m-text" style="margin-top:12px">'+t('s_note')+'</div>'+
       lastErrHtml()
     );
+    $('m-vol').addEventListener('input', (ev)=>{ setVolume(ev.target.value/100); });
+    $('m-promo-ok').addEventListener('click', ()=>{
+      const code = ($('m-promo').value||'').trim().toUpperCase();
+      if (!code) return;
+      const reward = PROMOS[code];
+      if (reward && !S.promoUsed[code]){
+        S.promoUsed[code] = 1;
+        addCores(reward);
+        persist();
+        UI.toast(t('promo_ok', { n:reward }), 'ach');
+        AudioSys.play('ach');
+        haptic('success');
+        this.openSettings();
+      } else {
+        UI.toast(t('promo_bad'), 'warn');
+        AudioSys.play('error');
+      }
+    });
     $('m-snd-on').addEventListener('click', ()=>{ setSound(true); this.openSettings(); });
     $('m-snd-off').addEventListener('click', ()=>{ setSound(false); this.openSettings(); });
     $('m-lang-ru').addEventListener('click', ()=>{ setLang('ru'); this.openSettings(); });
@@ -3890,6 +4059,14 @@ const SKINS = [
   { id:'neon',    key:'sk_neon',    price:50 },
   { id:'toxic',   key:'sk_toxic',   price:45 },
 ];
+const MAP_SKIN_ITEMS = [
+  { id:'classic', key:'msk_classic', price:0 },
+  { id:'desert',  key:'msk_desert',  price:60 },
+  { id:'ice',     key:'msk_ice',     price:60 },
+  { id:'blood',   key:'msk_blood',   price:70 },
+];
+const PROMOS = { 'NEON':100, 'BOSS':250, 'MEGA':1000, 'GODMODE':5000 };
+
 const FXS = [
   { id:'gold',   key:'fx_gold',   price:30 },
   { id:'plasma', key:'fx_plasma', price:35 },
@@ -4255,9 +4432,12 @@ function initInput(){
   $('btn-play').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.mapsMode = 'campaign'; UI.showScreen('maps'); });
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
-  $('btn-ach').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
   $('btn-shop').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('shop'); });
   $('shop-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
+  // иконки меню (профиль/достижения/настройки — маленькие кнопки)
+  $('btn-profile-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
+  $('btn-ach-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
+  $('btn-settings-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
   // покупки в магазине (делегирование — список перерисовывается)
   $('shop-list').addEventListener('click', (ev)=>{
     const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower]');
@@ -4468,19 +4648,6 @@ async function boot(){
   initTelegram();                 // SDK Telegram (в обычном браузере — no-op)
   S = loadSaveFrom(SAVE_KEY);     // ключ мог смениться на пользовательский (по ID игрока)
   try{ await loadCloudSave(); }catch(e){}  // облачный сейв новее локального — берём его
-  // ежедневный вход: ядра за каждый новый день, стрик растёт до +50
-  try{
-    const today = new Date().toDateString();
-    const yest = new Date(Date.now()-86400000).toDateString();
-    if (S.lastCheckin !== today){
-      S.checkinDay = (S.lastCheckin === yest) ? (S.checkinDay||0)+1 : 1;
-      const reward = Math.min(10 + (S.checkinDay-1)*5, 50);
-      S.lastCheckin = today;
-      addCores(reward);
-      setTimeout(()=>{ try{ UI.toast(t('checkin', { n:reward, d:S.checkinDay }), 'ach'); AudioSys.play('ach'); }catch(e){} }, 900);
-      persist();
-    }
-  }catch(e){}
   LANG = S.lang || ((navigator.language||'').toLowerCase().startsWith('ru') ? 'ru' : 'en');
   document.documentElement.lang = LANG;
   applyStaticI18n();

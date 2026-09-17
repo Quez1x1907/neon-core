@@ -82,7 +82,7 @@ function buildWave(mapIdx, wave, endless){
     return { groups, bossWave:true, mod:null };
   }
 
-  let budget = (7 + wave*3.3 + wave*wave*0.10) * (0.9 + 0.1*map.mult);
+  let budget = (7 + wave*3.4 + wave*wave*0.115) * (0.9 + 0.1*map.mult);
   if (mod === 'gold') budget *= 1.3; // золотая волна плотнее — но и награда ×2.5
   let delay = 0.4, avoid = null, mutUsed = false;
   let guard = 0;

@@ -8,10 +8,16 @@
   <div class="menu-btns">
     <button class="btn primary big" id="btn-play" data-i="play"></button>
     <button class="btn big" id="btn-endless" data-i="menu_endless"></button>
+    <button class="btn big" id="btn-shop" data-i="shop"></button>
     <button class="btn big" id="btn-lab" data-i="lab"></button>
     <button class="btn big" id="btn-ach" data-i="ach"></button>
     <button class="btn big" id="btn-profile" data-i="profile"></button>
-    <button class="btn ghost big" id="btn-settings" data-i="settings"></button>
+    <div id="menu-checkin" class="panel"></div>
+    <div class="menu-icons">
+      <button class="hbtn big" id="btn-profile-menu" title="Профиль"></button>
+      <button class="hbtn big" id="btn-ach-menu" title="Достижения"></button>
+      <button class="hbtn big" id="btn-settings-menu" title="Настройки"></button>
+    </div>
   </div>
   <div class="menu-stats" id="menu-stats"></div>
 </section>
@@ -34,6 +40,16 @@
     <div class="chip cores" id="lab-cores"></div>
   </header>
   <div class="scroll-list"><div class="lab-list" id="lab-list"></div></div>
+</section>
+
+<!-- МАГАЗИН -->
+<section id="screen-shop" class="screen">
+  <header class="topbar">
+    <button class="btn back" id="shop-back">←</button>
+    <h2 data-i="shop"></h2>
+    <div class="chip cores" id="shop-cores"></div>
+  </header>
+  <div class="scroll-list"><div id="shop-list" style="max-width:640px;margin:0 auto;width:100%"></div></div>
 </section>
 
 <!-- ПРОФИЛЬ -->

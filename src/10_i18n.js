@@ -4,6 +4,12 @@ ru: {
   tagline:'tower defense · защити ядро от вирусов',
   play:'Играть', lab:'Лаборатория', ach:'Достижения', settings:'Настройки',
   menu_endless:'Бесконечный режим', endless_title:'Бесконечный · рекорды',
+  profile_t:'Профиль', ach_t:'Достижения', set_t:'Настройки',
+  checkin_title:'Ежедневный вход', checkin_btn:'Забрать +{n}◆',
+  checkin_done:'Отмечено · день {d}', checkin_day:'день {d}',
+  promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
+  msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
+  shop_mapskins:'Скины карт',
   profile:'Профиль', pr_games:'Партий сыграно', pr_wins:'Побед',
   pr_kills:'Уничтожено вирусов', pr_bosses:'Побеждено боссов', pr_endless:'∞ рекорд',
   pr_stars:'Звёзды', pr_ach:'Достижения', pr_towers:'Построено башен',
@@ -122,6 +128,12 @@ en: {
   tagline:'tower defense · protect the core from viruses',
   play:'Play', lab:'Lab', ach:'Achievements', settings:'Settings',
   menu_endless:'Endless mode', endless_title:'Endless · records',
+  profile_t:'Profile', ach_t:'Achievements', set_t:'Settings',
+  checkin_title:'Daily login', checkin_btn:'Claim +{n} cores',
+  checkin_done:'Claimed · day {d}', checkin_day:'day {d}',
+  promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
+  msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
+  shop_mapskins:'Map skins',
   profile:'Profile', pr_games:'Games played', pr_wins:'Victories',
   pr_kills:'Viruses destroyed', pr_bosses:'Bosses defeated', pr_endless:'∞ record',
   pr_stars:'Stars', pr_ach:'Achievements', pr_towers:'Towers built',
@@ -237,6 +249,46 @@ en: {
   speed_x:'{n}×', stats_kills:'Kills', stats_best:'∞ record',
 }
 };
+
+/* Ключи магазина, чекина, промокодов и скинов карт (добавлены поверх базовых словарей) */
+Object.assign(I18N.ru, {
+  shop:'Магазин', shop_boosts:'Бусты (следующая партия)', shop_skins:'Скины башен',
+  shop_fx:'Эффекты', shop_towers:'Открытие башен', shop_all:'Всё открыто',
+  shop_mapskins:'Скины карт',
+  sh_dmg:'Усиление', sh_dmg_d:'+25% урона в следующей партии',
+  sh_lives:'Резерв', sh_lives_d:'+8 жизней ядра в следующей партии',
+  sh_cash:'Заначка', sh_cash_d:'+150$ в начале следующей партии',
+  sk_classic:'Классика', sk_chrome:'Хром', sk_neon:'Неон-пурпур', sk_toxic:'Токсик',
+  fx_gold:'Золотые трассы', fx_plasma:'Плазменные выстрелы', fx_snow:'Снегопад', fx_boom:'Двойной взрыв',
+  owned:'Есть', apply:'Применить', bought:'Куплено',
+  d_revive:'Возродиться', d_consol:'Утешительные ядра: +{n}',
+  boost_on:'Буст: {n}', a_shop:'Покупатель', a_shop_d:'Купить 5 товаров в магазине',
+  checkin_title:'Ежедневный вход', checkin_btn:'Забрать +{n}◆',
+  checkin_done:'Отмечено · день {d}', checkin_day:'день {d}',
+  promo:'Промокод', promo_ok:'Промокод применён: +{n}◆', promo_bad:'Неверный промокод',
+  msk_classic:'Классика', msk_desert:'Пустыня', msk_ice:'Лёд', msk_blood:'Кровь',
+  s_full:'Во весь экран', s_autolow:'Подтормаживает — включил низкую графику',
+  s_lasterr:'Последняя ошибка:',
+});
+Object.assign(I18N.en, {
+  shop:'Shop', shop_boosts:'Boosts (next run)', shop_skins:'Tower skins',
+  shop_fx:'Effects', shop_towers:'Unlock towers', shop_all:'All unlocked',
+  shop_mapskins:'Map skins',
+  sh_dmg:'Power-up', sh_dmg_d:'+25% damage in the next run',
+  sh_lives:'Reserve', sh_lives_d:'+8 core lives in the next run',
+  sh_cash:'Stash', sh_cash_d:'+150$ at the start of the next run',
+  sk_classic:'Classic', sk_chrome:'Chrome', sk_neon:'Neon Purple', sk_toxic:'Toxic',
+  fx_gold:'Golden traces', fx_plasma:'Plasma shots', fx_snow:'Snowfall', fx_boom:'Double blast',
+  owned:'Owned', apply:'Apply', bought:'Purchased',
+  d_revive:'Revive', d_consol:'Consolation cores: +{n}',
+  boost_on:'Boost: {n}', a_shop:'Shopper', a_shop_d:'Buy 5 items in the shop',
+  checkin_title:'Daily login', checkin_btn:'Claim +{n} cores',
+  checkin_done:'Claimed · day {d}', checkin_day:'day {d}',
+  promo:'Promo code', promo_ok:'Promo applied: +{n} cores', promo_bad:'Invalid code',
+  msk_classic:'Classic', msk_desert:'Desert', msk_ice:'Ice', msk_blood:'Blood',
+  s_full:'Fullscreen', s_autolow:'Running slow — enabled low graphics',
+  s_lasterr:'Last error:',
+});
 // LANG инициализируется в main.js после загрузки сохранения
 let LANG = 'en';
 function t(key, params){

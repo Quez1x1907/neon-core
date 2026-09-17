@@ -18,6 +18,7 @@ const AudioSys = {
   },
   resume(){ this.init(); if (this.ctx && this.ctx.state==='suspended') this.ctx.resume(); },
   setMuted(m){ if (this.master) this.master.gain.value = m ? 0 : 0.5; },
+  setVolume(v){ if (this.master && S.sound) this.master.gain.value = v; },
   tone(freq, dur, type, vol, slideTo, delay){
     if (!this.ctx) return;
     const t0 = this.ctx.currentTime + (delay||0);

@@ -165,7 +165,42 @@ function initInput(){
   $('btn-play').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.mapsMode = 'campaign'; UI.showScreen('maps'); });
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
-  $('btn-ach').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
+  $('btn-shop').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('shop'); });
+  $('shop-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
+  // иконки меню (профиль/достижения/настройки — маленькие кнопки)
+  $('btn-profile-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
+  $('btn-ach-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
+  $('btn-settings-menu').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
+  // покупки в магазине (делегирование — список перерисовывается)
+  $('shop-list').addEventListener('click', (ev)=>{
+    const b = ev.target.closest('[data-buyboost],[data-buyskin],[data-setskin],[data-buyfx],[data-fx],[data-buytower]');
+    if (!b) return;
+    const buy = (price)=>{
+      if (S.cores < price){ AudioSys.play('error'); return false; }
+      S.cores -= price;
+      S.stats.purchases = (S.stats.purchases||0)+1;
+      return true;
+    };
+    if (b.dataset.buyboost){
+      const def = BOOSTS.find(x=>x.id===b.dataset.buyboost);
+      if (buy(def.price)){ S.boosts[def.id] = (S.boosts[def.id]||0)+1; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.buyskin){
+      const def = SKINS.find(x=>x.id===b.dataset.buyskin);
+      if (buy(def.price)){ S.skins[def.id] = 1; S.skin = def.id; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.setskin){
+      S.skin = b.dataset.setskin; persist(); AudioSys.play('click');
+    } else if (b.dataset.buyfx){
+      const def = FXS.find(x=>x.id===b.dataset.buyfx);
+      if (buy(def.price)){ S.fx[def.id] = 2; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    } else if (b.dataset.fx){
+      S.fx[b.dataset.fx] = (S.fx[b.dataset.fx] === 2) ? 1 : 2; persist(); AudioSys.play('click');
+    } else if (b.dataset.buytower){
+      const tp = b.dataset.buytower;
+      const price = 20 + UNLOCK_STARS[tp]*5;
+      if (buy(price)){ S.buyUnlocked[tp] = 1; UI.toast(t('bought'), 'ach'); AudioSys.play('coin'); persist(); checkAch(); }
+    }
+    UI.renderShop();
+  });
   $('btn-profile').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
   $('profile-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('btn-settings').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });

@@ -84,7 +84,15 @@ const WAVE_MODS = {
 /* Расписание модификаторов в кампании (волна → модификатор) */
 const CAMPAIGN_MODS = { 6:'gold', 11:'storm', 16:'armor' };
 
-/* ---- Враги ---- */
+/* Скины карт: палитры для фона, сетки и декора */
+const MAP_SKINS = {
+  classic: { key:'msk_classic', price:0,  bg:['#070b18','#05070f','#0a0f22'], grid:'rgba(0,229,255,0.05)',  border:'rgba(0,229,255,0.16)', cell:'rgba(0,229,255,0.05)',  node:'rgba(0,229,255,0.10)',  marker:'0,229,255',  decoB:'rgba(0,229,255,0.18)', decoL:'rgba(0,229,255,0.25)' },
+  desert:  { key:'msk_desert',  price:60, bg:['#181008','#100b05','#221608'], grid:'rgba(255,176,32,0.06)', border:'rgba(255,176,32,0.18)', cell:'rgba(255,176,32,0.05)',  node:'rgba(255,176,32,0.10)',  marker:'255,176,32', decoB:'rgba(255,176,32,0.18)', decoL:'rgba(255,176,32,0.25)' },
+  ice:     { key:'msk_ice',     price:60, bg:['#061018','#040a12','#0a1826'], grid:'rgba(160,220,255,0.06)', border:'rgba(160,220,255,0.18)', cell:'rgba(160,220,255,0.06)',  node:'rgba(160,220,255,0.10)',  marker:'160,220,255', decoB:'rgba(160,220,255,0.18)', decoL:'rgba(160,220,255,0.25)' },
+  blood:   { key:'msk_blood',   price:70, bg:['#160608','#0e0406','#1e0a0e'], grid:'rgba(255,51,85,0.06)',  border:'rgba(255,51,85,0.18)', cell:'rgba(255,51,85,0.05)',  node:'rgba(255,51,85,0.10)',  marker:'255,51,85',  decoB:'rgba(255,51,85,0.18)', decoL:'rgba(255,51,85,0.25)' },
+};
+
+/* Бесконечная цепочка
 const ENEMIES = {
   drone:   { key:'en_drone',    hp:32,  speed:1.5,  armor:0, reward:5,   leak:1,  r:.30, color:'#ff2d78', shape:'tri',  cost:1 },
   bit:     { key:'en_bit',      hp:10,  speed:2.3,  armor:0, reward:2,   leak:1,  r:.18, color:'#ff7a2d', shape:'dia',  cost:.35 },
@@ -179,6 +187,8 @@ const ACHS = [
   { id:'stars21',   key:'a_stars21',   reward:25, test:()=>totalStars()>=MAPS.length*3,      prog:()=>[Math.min(totalStars(),MAPS.length*3),MAPS.length*3] },
   { id:'spec5',     key:'a_spec5',     reward:10, test:()=>S.stats.branches>=5,              prog:()=>[Math.min(S.stats.branches,5),5] },
   { id:'amp2',      key:'a_amp2',      reward:10, test:()=>S.stats.maxAmps>=2,               prog:()=>[Math.min(S.stats.maxAmps,2),2] },
+  { id:'shop5',     key:'a_shop',      reward:10, test:()=>(S.stats.purchases||0)>=5,        prog:()=>[Math.min(S.stats.purchases||0,5),5] },
+  { id:'shop5',     key:'a_shop',      reward:10, test:()=>(S.stats.purchases||0)>=5,        prog:()=>[Math.min(S.stats.purchases||0,5),5] },
 ];
 
 /* Иконки-стрелки/UI (inline SVG, без внешних файлов) */
@@ -187,6 +197,9 @@ const ICONS = {
   pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
   home:'<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',
   full:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  gear:'<svg viewBox="0 0 24 24"><path d="M19.4 13a7.8 7.8 0 000-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-1.6-1L15 3.4h-4l-.4 2.6a7.6 7.6 0 00-1.6 1l-2.4-1-2 3.4L6.6 11a7.8 7.8 0 000 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 001.6 1l.4 2.6h4l.4-2.6a7.6 7.6 0 001.6-1l2.4 1 2-3.4-2-1.6zM13 15a3 3 0 110-6 3 3 0 010 6z" fill="currentColor" stroke="none"/></svg>',
+  person:'<svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z" fill="currentColor" stroke="none"/></svg>',
+  badge:'<svg viewBox="0 0 24 24"><path d="M12 2l2.4 2.4 3.2-.4.8 3.2L21 9.6l-1.4 2.9 1 3.1-3.1 1L16 19.7l-3.2-.4L12 22l-2.4-2.4-3.2.4-.8-3.2L3 15.6 4.4 12.7 3.4 9.6l3.1-1L7 5.6l3.2.4z" fill="currentColor" stroke="none"/><path d="M10.6 13.2l-2.2-2.2 1.2-1.2 1 1 3-3 1.2 1.2z" fill="#05070f" stroke="none"/></svg>',
   core:'<svg viewBox="0 0 24 24"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/></svg>',
   dmg:'<svg viewBox="0 0 24 24"><path d="M4 20l6-6M14 4l6 6M4 4l16 16" /><path d="M4 14v6h6M20 10V4h-6"/></svg>',
   lives:'<svg viewBox="0 0 24 24"><path d="M12 21C7 16 3 12.5 3 8.5 3 6 5 4 7.5 4c1.8 0 3.4 1 4.5 2.6C13.1 5 14.7 4 16.5 4 19 4 21 6 21 8.5c0 4-4 7.5-9 12.5z"/></svg>',
