@@ -1140,7 +1140,7 @@ function unlockedTowerCount(){ return TOWER_ORDER.filter(towerUnlocked).length; 
 /* Итоговые (с учётом мета-прокачки) параметры новой партии */
 function metaVals(){
   return {
-    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
+    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.active && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
     lives: START_LIVES + 2*S.meta.lives,
     cash: START_CASH + 30*S.meta.cash,
     rewardMul: 1 + 0.06*S.meta.income,
@@ -3347,7 +3347,8 @@ const UI = {
       const today = new Date().toDateString();
       const yest = new Date(Date.now()-86400000).toDateString();
       out.canClaim = S.lastCheckin !== today;
-      out.day = S.checkinDay || ((S.lastCheckin === yest) ? 1 : 0) || (out.canClaim ? 1 : 0);
+      // показываем день, который БУДЕТ засчитан при заборе: вчера играл → стрик+1, иначе день 1
+      out.day = out.canClaim ? ((S.lastCheckin === yest) ? (S.checkinDay||0)+1 : 1) : (S.checkinDay||1);
       out.reward = Math.min(10 + (Math.max(1,out.day)-1)*5, 50);
     }catch(e){}
     const mc = $('menu-checkin');
@@ -4193,6 +4194,20 @@ function setSound(on){
   AudioSys.setMuted(!on);
   if (on) AudioSys.resume();
 }
+/* Ежедневный вход: начисление по кнопке из меню. Стрик растёт при входе день за днём */
+function claimCheckin(){
+  const today = new Date().toDateString();
+  const yest = new Date(Date.now()-86400000).toDateString();
+  if (S.lastCheckin === today) return 0;
+  S.checkinDay = (S.lastCheckin === yest) ? (S.checkinDay||0)+1 : 1;
+  const reward = Math.min(10 + (S.checkinDay-1)*5, 50);
+  S.lastCheckin = today;
+  addCores(reward);
+  persist();
+  checkAch();
+  return reward;
+}
+
 /* Громкость: 0..1 */
 function setVolume(v){
   S.volume = clamp(v, 0, 1); persist();
@@ -4469,6 +4484,8 @@ function initInput(){
   $('btn-play').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.mapsMode = 'campaign'; UI.showScreen('maps'); });
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
+  const bach = document.getElementById('btn-ach');
+  if (bach) bach.addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
   $('btn-shop').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('shop'); });
   $('shop-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   // иконки меню (профиль/достижения/настройки — маленькие кнопки)

@@ -57,7 +57,8 @@ const UI = {
       const today = new Date().toDateString();
       const yest = new Date(Date.now()-86400000).toDateString();
       out.canClaim = S.lastCheckin !== today;
-      out.day = S.checkinDay || ((S.lastCheckin === yest) ? 1 : 0) || (out.canClaim ? 1 : 0);
+      // показываем день, который БУДЕТ засчитан при заборе: вчера играл → стрик+1, иначе день 1
+      out.day = out.canClaim ? ((S.lastCheckin === yest) ? (S.checkinDay||0)+1 : 1) : (S.checkinDay||1);
       out.reward = Math.min(10 + (Math.max(1,out.day)-1)*5, 50);
     }catch(e){}
     const mc = $('menu-checkin');
@@ -903,6 +904,20 @@ function setSound(on){
   AudioSys.setMuted(!on);
   if (on) AudioSys.resume();
 }
+/* Ежедневный вход: начисление по кнопке из меню. Стрик растёт при входе день за днём */
+function claimCheckin(){
+  const today = new Date().toDateString();
+  const yest = new Date(Date.now()-86400000).toDateString();
+  if (S.lastCheckin === today) return 0;
+  S.checkinDay = (S.lastCheckin === yest) ? (S.checkinDay||0)+1 : 1;
+  const reward = Math.min(10 + (S.checkinDay-1)*5, 50);
+  S.lastCheckin = today;
+  addCores(reward);
+  persist();
+  checkAch();
+  return reward;
+}
+
 /* Громкость: 0..1 */
 function setVolume(v){
   S.volume = clamp(v, 0, 1); persist();

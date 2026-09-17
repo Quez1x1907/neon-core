@@ -165,6 +165,8 @@ function initInput(){
   $('btn-play').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.mapsMode = 'campaign'; UI.showScreen('maps'); });
   $('btn-endless').addEventListener('click', ()=>{ AudioSys.resume(); AudioSys.play('click'); UI.openEndless(); });
   $('btn-lab').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('lab'); });
+  const bach = document.getElementById('btn-ach');
+  if (bach) bach.addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('ach'); });
   $('btn-shop').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('shop'); });
   $('shop-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   // иконки меню (профиль/достижения/настройки — маленькие кнопки)

@@ -52,7 +52,7 @@ function unlockedTowerCount(){ return TOWER_ORDER.filter(towerUnlocked).length; 
 /* Итоговые (с учётом мета-прокачки) параметры новой партии */
 function metaVals(){
   return {
-    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
+    dmgMul: (1 + 0.06*S.meta.dmg) * ((typeof G !== 'undefined' && G.active && G.boost && G.boost.dmg > 1) ? G.boost.dmg : 1),
     lives: START_LIVES + 2*S.meta.lives,
     cash: START_CASH + 30*S.meta.cash,
     rewardMul: 1 + 0.06*S.meta.income,
