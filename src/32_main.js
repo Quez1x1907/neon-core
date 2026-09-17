@@ -65,6 +65,11 @@ function queueFrame(){
 
 /* Любая ошибка не должна останавливать игру: пишем в консоль и показываем один тост */
 let lastErrToast = 0;
+// неперехваченные отказы обещаний (класс бага «пустой экран при запуске»)
+window.addEventListener('unhandledrejection', (ev)=>{
+  try{ reportErr(ev.reason || new Error('unhandled rejection')); }catch(e){}
+});
+
 function reportErr(e){
   console.error('[NEON CORE]', e);
   const msg = String(e && e.message || e).slice(0, 200);
@@ -75,9 +80,20 @@ function reportErr(e){
     localStorage.setItem('nc_errs', JSON.stringify(arr.slice(0,5)));
   }catch(e2){}
   const now = performance.now();
-  if (now - lastErrToast > 5000){
+  // если интерфейс ещё не поднялся — показываем ошибку прямо на экране,
+  // чтобы её можно было заскринить (иначе пользователь видит только чёрный экран)
+  if (!document.querySelector('.screen.active')){
+    let box = document.getElementById('booterr');
+    if (!box){
+      box = document.createElement('div');
+      box.id = 'booterr';
+      box.style.cssText = 'position:fixed;inset:auto 10px 10px 10px;z-index:99;background:rgba(60,8,16,.95);border:1px solid #ff3355;border-radius:10px;padding:10px 12px;color:#ffd7de;font:11px Consolas,monospace;white-space:pre-wrap;max-height:40%;overflow:auto';
+      document.body.appendChild(box);
+    }
+    box.textContent = 'Ошибка запуска: ' + msg;
+  } else if (now - lastErrToast > 5000){
     lastErrToast = now;
-    try{ UI.toast('Ошибка: ' + (e && e.message || e), 'warn'); }catch(e2){}
+    try{ UI.toast('Ошибка: ' + msg, 'warn'); }catch(e2){}
   }
 }
 
@@ -104,17 +120,19 @@ setInterval(()=>{
 }, 50);
 
 async function boot(){
-  initTelegram();                 // SDK Telegram (в обычном браузере — no-op)
-  S = loadSaveFrom(SAVE_KEY);     // ключ мог смениться на пользовательский (по ID игрока)
-  try{ await loadCloudSave(); }catch(e){}  // облачный сейв новее локального — берём его
-  LANG = S.lang || ((navigator.language||'').toLowerCase().startsWith('ru') ? 'ru' : 'en');
-  document.documentElement.lang = LANG;
-  applyStaticI18n();
-  UI.init();
-  initInput();
-  initBgfx();
-  UI.showScreen('menu');
-  syncBackButton();
+  const phase = (name, f)=>{ try{ f(); }catch(e){ reportErr(e); } };
+  phase('telegram', ()=>initTelegram());   // SDK Telegram (в обычном браузере — no-op)
+  phase('save', ()=>{ S = loadSaveFrom(SAVE_KEY); });  // ключ мог смениться на пользовательский
+  try{ await loadCloudSave(); }catch(e){ reportErr(e); } // облачный сейв новее локального
+  phase('lang', ()=>{
+    LANG = S.lang || ((navigator.language||'').toLowerCase().startsWith('ru') ? 'ru' : 'en');
+    document.documentElement.lang = LANG;
+    applyStaticI18n();
+  });
+  phase('ui', ()=>UI.init());
+  phase('input', ()=>initInput());
+  phase('bgfx', ()=>initBgfx());
+  phase('menu', ()=>{ UI.showScreen('menu'); syncBackButton(); });
   queueFrame();
 }
 

@@ -203,7 +203,8 @@ function initInput(){
   });
   $('btn-profile').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('profile'); });
   $('profile-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
-  $('btn-settings').addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
+  const bset = document.getElementById('btn-settings');
+  if (bset) bset.addEventListener('click', ()=>{ AudioSys.play('click'); UI.openSettings(); });
   $('maps-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('lab-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
   $('ach-back').addEventListener('click', ()=>{ AudioSys.play('click'); UI.showScreen('menu'); });
